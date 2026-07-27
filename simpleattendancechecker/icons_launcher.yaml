@@ -1,0 +1,15 @@
+icons_launcher:
+  image_path: lib/assets/logo.png
+  platforms:
+    android:
+      enable: true
+    ios:
+      enable: true
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: lib/assets/logo.png
+    
+  android_12:
+    color: '#FFFFFF'
+    image: lib/assets/logo_name.png

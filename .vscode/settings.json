@@ -1,0 +1,11 @@
+{
+    "files.autoSave": "afterDelay",
+    "editor.wordWrap": "on",
+    "workbench.colorTheme": "Dark Modern",
+    "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+    "editor.guides.bracketPairs": "active",
+    "editor.cursorBlinking": "smooth",
+    "diffEditor.codeLens": true,
+    "editor.minimap.renderCharacters": false,
+    "editor.minimap.scale": 2
+}

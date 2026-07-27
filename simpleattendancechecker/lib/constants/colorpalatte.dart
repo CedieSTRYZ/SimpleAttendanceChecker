@@ -14,4 +14,10 @@ class Colorpalatte {
   static const Color warningColor = Color(0xFFF59E0B);
   static const Color infoColor = Color(0xFF0EA5E9);
   static const Color mutedtextColor = Color(0xFF9CA3AF);
+
+  // ── 🖌️ Markings Colors ───────────────────────────
+  static const Color presentColor = Color(0xFF2E9E5B);
+  static const Color lateColor = Color(0xFFE8871E);
+  static const Color absentColor = Color(0xFFD64545);
+  static const Color ojtworkingColor = Color(0xFF4A6FA5);
 }

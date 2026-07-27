@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simpleattendancechecker/constants/colorpalatte.dart';
-import 'package:simpleattendancechecker/pages/dashboard.dart';
+import 'package:simpleattendancechecker/screen/dashboard.dart';
 class SplashLogo extends StatefulWidget {
   const SplashLogo({super.key});
 
@@ -195,7 +195,7 @@ class _SplashLogoState extends State<SplashLogo>
               child: ScaleTransition(
                 scale: _logoScale,
                 child: Image(
-                  image: const AssetImage('lib/assets/attendance_logo.png'),
+                  image: const AssetImage('lib/assets/logo_name.png'),
                   height: 240,
                 ),
               ),

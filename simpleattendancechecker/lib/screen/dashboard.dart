@@ -14,6 +14,7 @@ class _DashboardState extends State<Dashboard> {
     return Scaffold(
       body: Center(
         child: Container(
+          padding: EdgeInsets.all(20),
           width: 300,
           height: 500,
           decoration: BoxDecoration(
@@ -31,6 +32,31 @@ class _DashboardState extends State<Dashboard> {
                 blurRadius: 6,
                 spreadRadius: 0,
                 offset: Offset(0, 6),
+              ),
+            ],
+          ),
+
+          child: Column(
+            children: [
+              Text(
+                'This font is K2D regular',
+                style: TextStyle(fontFamily: 'K2D', fontWeight: FontWeight.w400),
+              ),
+              Text(
+                'This font is K2D bold',
+                style: TextStyle(fontFamily: 'K2D', fontWeight: FontWeight.w700),
+              ),
+              Text(
+                'This font is Poppins regular',
+                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w400),
+              ),
+              Text(
+                'This font is Poppins medium',
+                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500),
+              ),
+              Text(
+                'This font is Poppins semiBold',
+                style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w600),
               ),
             ],
           ),

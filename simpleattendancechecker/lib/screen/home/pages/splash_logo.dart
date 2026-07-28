@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simpleattendancechecker/constants/colorpalatte.dart';
-import 'package:simpleattendancechecker/screen/dashboard.dart';
+import 'package:simpleattendancechecker/screen/home/pages/home.dart';
 class SplashLogo extends StatefulWidget {
   const SplashLogo({super.key});
 
@@ -67,7 +67,7 @@ class _SplashLogoState extends State<SplashLogo>
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
-            pageBuilder: (_, _, _) => const Dashboard(),
+            pageBuilder: (_, _, _) => const Home(),
             transitionsBuilder: (_, animation, _, child) {
               return FadeTransition(opacity: animation, child: child);
             },

@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:simpleattendancechecker/firebase_options.dart';
-import 'package:simpleattendancechecker/screen/splash_logo.dart';
+import 'package:simpleattendancechecker/screen/home/pages/splash_logo.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

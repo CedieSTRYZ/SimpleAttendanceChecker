@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simpleattendancechecker/constants/colorpalatte.dart';
+import 'package:simpleattendancechecker/widget/attendace_card.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -11,67 +12,52 @@ class Dashboard extends StatefulWidget {
 class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: EdgeInsets.all(20),
-        width: 300,
-        height: 500,
-        decoration: BoxDecoration(
-          color: Colorpalatte.infoColor,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Color.fromRGBO(0, 0, 0, 0.19),
-              blurRadius: 20,
-              spreadRadius: 0,
-              offset: Offset(0, 10),
-            ),
-            BoxShadow(
-              color: Color.fromRGBO(0, 0, 0, 0.23),
-              blurRadius: 6,
-              spreadRadius: 0,
-              offset: Offset(0, 6),
-            ),
-          ],
-        ),
-
-        child: Center(
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
           child: Column(
             children: [
-              Text(
-                'This font is K2D regular',
-                style: TextStyle(
-                  fontFamily: 'K2D',
-                  fontWeight: FontWeight.w400,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [Text('data'), Text('hahahaha')],
               ),
-              Text(
-                'This font is K2D bold',
-                style: TextStyle(
-                  fontFamily: 'K2D',
-                  fontWeight: FontWeight.w700,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Container(
+                    width: MediaQuery.widthOf(context) * 0.3,
+                    height: MediaQuery.heightOf(context) * 0.3,
+                    color: Colorpalatte.accent,
+                  ),
+                  Container(
+                    width: MediaQuery.widthOf(context) * 0.3,
+                    height: MediaQuery.heightOf(context) * 0.3,
+                    color: Colorpalatte.infoColor,
+                  ),
+                ],
               ),
-              Text(
-                'This font is Poppins regular',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w400,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [Text('data'), Text('hahahaha')],
               ),
-              Text(
-                'This font is Poppins medium',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                'This font is Poppins semiBold',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                ),
+              Column(
+                spacing: 10,
+                children: [
+                  AttendaceCard(),
+                  AttendaceCard(),
+                  AttendaceCard(),
+                  AttendaceCard(),
+                  AttendaceCard(),
+                  AttendaceCard(),
+                  AttendaceCard(),
+                  AttendaceCard(),
+                  AttendaceCard(),
+                  AttendaceCard(),
+                  AttendaceCard(),
+                  AttendaceCard(),
+                  AttendaceCard(),
+                ],
               ),
             ],
           ),

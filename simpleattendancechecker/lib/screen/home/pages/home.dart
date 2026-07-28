@@ -26,8 +26,9 @@ class _HomeState extends State<Home> {
       body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: CurvedNavigationBar(
         index: _selectedIndex,
-        backgroundColor: Colors.greenAccent,
+        backgroundColor: Colors.white,
         color: Colorpalatte.primary,
+        animationDuration: Duration(milliseconds: 400),
         onTap: (index) {
           setState(() {
             _selectedIndex = index;

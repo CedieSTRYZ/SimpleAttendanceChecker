@@ -17,44 +17,118 @@ class _DashboardState extends State<Dashboard> {
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
+            spacing: 20,
             children: [
+              // ── Text for overview ───────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [Text('data'), Text('hahahaha')],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Container(
-                    width: MediaQuery.widthOf(context) * 0.3,
-                    height: MediaQuery.heightOf(context) * 0.3,
-                    color: Colorpalatte.accent,
+                  Text(
+                    'Overview',
+                    style: TextStyle(
+                      fontFamily: 'K2D',
+                      fontSize: 36,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                  Container(
-                    width: MediaQuery.widthOf(context) * 0.3,
-                    height: MediaQuery.heightOf(context) * 0.3,
-                    color: Colorpalatte.infoColor,
+                  //! No function for now {#3ea,9}
+                  Text(
+                    'This week',
+                    style: TextStyle(
+                      color: Colorpalatte.accent,
+                      fontFamily: 'K2D',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
+
+              //TODO: Adjust this for displaying how many student are present, absent, and late  {#745,42}
+              SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    Container(
+                      width: 180,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        color: Colorpalatte.containerColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    Container(
+                      width: 180,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        color: Colorpalatte.containerColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    Container(
+                      width: 180,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        color: Colorpalatte.containerColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    Container(
+                      width: 180,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        color: Colorpalatte.containerColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── Text for sections ───────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [Text('data'), Text('hahahaha')],
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Section 4-1',
+                    style: TextStyle(
+                      fontFamily: 'K2D',
+                      fontSize: 36,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    'See all',
+                    style: TextStyle(
+                      color: Colorpalatte.accent,
+                      fontFamily: 'K2D',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
+
+              //TODO: Make this functionable base on how many student have been scanned for QRcode {#54e,18}
               Column(
                 spacing: 10,
                 children: [
                   AttendaceCard(),
+                  AttendaceCard(color: Colorpalatte.absentColor),
+                  AttendaceCard(color: Colorpalatte.lateColor),
+                  AttendaceCard(color: Colorpalatte.ojtworkingColor),
+                  AttendaceCard(color: Colorpalatte.absentColor),
                   AttendaceCard(),
                   AttendaceCard(),
-                  AttendaceCard(),
-                  AttendaceCard(),
-                  AttendaceCard(),
-                  AttendaceCard(),
-                  AttendaceCard(),
-                  AttendaceCard(),
-                  AttendaceCard(),
-                  AttendaceCard(),
+                  AttendaceCard(color: Colorpalatte.ojtworkingColor),
+                  AttendaceCard(color: Colorpalatte.lateColor),
+                  AttendaceCard(color: Colorpalatte.lateColor),
+                  AttendaceCard(color: Colorpalatte.lateColor),
                   AttendaceCard(),
                   AttendaceCard(),
                 ],

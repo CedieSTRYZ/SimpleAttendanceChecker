@@ -13,17 +13,23 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  // ── 🛠️ Functions ───────────────────────────
+  // ── 🛠️ Global functions ───────────────────────────
   int _selectedIndex = 1;
 
-  final List<Widget> _pages = [Scanner(), Dashboard(), RecordList()];
-
-  // ── 🖼️ Builder UI ───────────────────────────
+  // ── 📱 Builder UI ───────────────────────────
   @override
   Widget build(BuildContext context) {
+    // ── 🛠️ Local functions ───────────────────────────
+    final List<Widget> pages = [
+      Scanner(isActive: _selectedIndex == 0),
+      Dashboard(),
+      RecordList(),
+    ];
+
+    // ── 🏗️ Main structure ───────────────────────────
     return Scaffold(
       backgroundColor: Colorpalatte.white,
-      body: IndexedStack(index: _selectedIndex, children: _pages),
+      body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: CurvedNavigationBar(
         index: _selectedIndex,
         backgroundColor: Colors.white,
@@ -35,7 +41,11 @@ class _HomeState extends State<Home> {
           });
         },
         items: [
-          Icon(Icons.qr_code_scanner_rounded, color: Colorpalatte.white, size: 30),
+          Icon(
+            Icons.qr_code_scanner_rounded,
+            color: Colorpalatte.white,
+            size: 30,
+          ),
           Icon(Icons.home_rounded, color: Colorpalatte.white, size: 30),
           Icon(Icons.list_alt_rounded, color: Colorpalatte.white, size: 30),
         ],

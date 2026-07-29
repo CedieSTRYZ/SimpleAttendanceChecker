@@ -15,7 +15,7 @@ class _DashboardState extends State<Dashboard> {
     return SafeArea(
       child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(14.0),
           child: Column(
             spacing: 20,
             children: [

@@ -41,19 +41,21 @@ class _ScannerState extends State<Scanner> {
     super.dispose();
   }
 
-  void _onDetect(BarcodeCapture capture) {
+  Future<void> _onDetect(BarcodeCapture capture) async {
+    if (_isProcessing) return;
     final barcode = capture.barcodes.firstOrNull;
     final rawValue = barcode?.rawValue;
     if (rawValue == null) return;
-    if (_isProcessing) return;
 
     _isProcessing = true;
-    controller.stop;
+    await controller.stop();
 
-    _bottomSheet(rawValue);
+    if (mounted) return;
+    await _bottomSheet(rawValue);
   }
 
-  // ── 🔎 Parse "06-2324-033121" into its parts ───────────────────────────
+  //TODO: Make this connected to firebase and replace the parse function {#729,10}
+  // ── 🔎 Parse functionss ───────────────────────────
   Map<String, String> _parseQrData(String rawValue) {
     final parts = rawValue.split('-');
     return {
@@ -68,13 +70,20 @@ class _ScannerState extends State<Scanner> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14.0),
       child: Column(
         spacing: 20,
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Scanning Attendance'),
+          Text(
+            'Scan for Attendance',
+            style: TextStyle(
+              fontFamily: 'K2D',
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
 
           // ── 🔍 Scanner area ───────────────────────────
           Center(
@@ -91,17 +100,53 @@ class _ScannerState extends State<Scanner> {
               // ── 🔎 Scanning point ───────────────────────────
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: MobileScanner(
-                  controller: controller,
-                  onDetect: _onDetect,
-                  fit: BoxFit.cover,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final size = Size(
+                      constraints.maxWidth,
+                      constraints.maxHeight,
+                    );
+                    final cutoutSize = size.shortestSide * 0.6;
+                    final scanWindow = Rect.fromCenter(
+                      center: Offset(size.width / 2, size.height / 2),
+                      width: cutoutSize,
+                      height: cutoutSize,
+                    );
+
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        MobileScanner(
+                          controller: controller,
+                          onDetect: _onDetect,
+                          fit: BoxFit.cover,
+                        ),
+                        CustomPaint(
+                          size: size,
+                          painter: _ScannerOverlayPainter(
+                            scanWindow: scanWindow,
+                            borderColor: Colorpalatte.accent,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
           ),
 
           // ── 🚨 Reminder text ───────────────────────────
-          Center(child: Text("Postion the student's QR code inside the frame")),
+          Center(
+            child: Text(
+              "Point your camera at QR Code to scan",
+              style: TextStyle(
+                fontFamily: 'K2D',
+                fontSize: 18,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -227,5 +272,95 @@ class _ScannerState extends State<Scanner> {
         Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
       ],
     );
+  }
+}
+
+// ── 🎨 Overlay painter: dims outside the box, draws corner brackets ───────────
+class _ScannerOverlayPainter extends CustomPainter {
+  final Rect scanWindow;
+  final Color borderColor;
+
+  _ScannerOverlayPainter({required this.scanWindow, required this.borderColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Dim everything outside the scan window
+    final backgroundPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final cutoutPath = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(scanWindow, const Radius.circular(16)),
+      );
+    final dimPath = Path.combine(
+      PathOperation.difference,
+      backgroundPath,
+      cutoutPath,
+    );
+    canvas.drawPath(
+      dimPath,
+      Paint()..color = Colors.black.withValues(alpha: 0.5),
+    );
+
+    // Corner brackets
+    const cornerLength = 28.0;
+    const strokeWidth = 5.0;
+    final cornerPaint = Paint()
+      ..color = borderColor
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final r = scanWindow;
+
+    // top-left
+    canvas.drawLine(
+      r.topLeft,
+      r.topLeft + const Offset(cornerLength, 0),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      r.topLeft,
+      r.topLeft + const Offset(0, cornerLength),
+      cornerPaint,
+    );
+    // top-right
+    canvas.drawLine(
+      r.topRight,
+      r.topRight + const Offset(-cornerLength, 0),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      r.topRight,
+      r.topRight + const Offset(0, cornerLength),
+      cornerPaint,
+    );
+    // bottom-left
+    canvas.drawLine(
+      r.bottomLeft,
+      r.bottomLeft + const Offset(cornerLength, 0),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      r.bottomLeft,
+      r.bottomLeft + const Offset(0, -cornerLength),
+      cornerPaint,
+    );
+    // bottom-right
+    canvas.drawLine(
+      r.bottomRight,
+      r.bottomRight + const Offset(-cornerLength, 0),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      r.bottomRight,
+      r.bottomRight + const Offset(0, -cornerLength),
+      cornerPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScannerOverlayPainter oldDelegate) {
+    return oldDelegate.scanWindow != scanWindow ||
+        oldDelegate.borderColor != borderColor;
   }
 }

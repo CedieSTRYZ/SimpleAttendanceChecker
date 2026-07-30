@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:simpleattendancechecker/constants/app_sizing.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
@@ -17,6 +19,7 @@ class _ScannerState extends State<Scanner> {
   // ── 🛠️ Functions ───────────────────────────
   late final MobileScannerController controller;
   bool _isProcessing = false;
+  bool _lateMode = false;
 
   @override
   void initState() {
@@ -47,69 +50,134 @@ class _ScannerState extends State<Scanner> {
   Future<void> _onDetect(BarcodeCapture capture) async {
     if (_isProcessing) return;
     final barcode = capture.barcodes.firstOrNull;
-    final rawValue = barcode?.rawValue;
-    if (rawValue == null) return;
+    final rawValue = barcode?.rawValue?.trim();
+    if (rawValue == null || rawValue.isEmpty) return;
 
     _isProcessing = true;
     await controller.stop();
 
-    if (!mounted) return;
-    final data = _parseQrData(rawValue);
-    await ScannedQrSheet.show(context, data);
+    if (mounted) {
+      await _handleScan(rawValue);
+    }
 
     _isProcessing = false;
-    if (widget.isActive) {
+    if (mounted && widget.isActive) {
       controller.start();
     }
   }
 
-  // ── 🔎 Parse functionss ───────────────────────────
-  Map<String, String> _parseQrData(String rawValue) {
-    const labels = [
-      'ID',
-      'Name',
-      'Program',
-      'Year',
-      'Section',
-      'Email',
-      'Status',
-    ];
+  // ── 🔎 Firestore lookup + attendance logging ───────────────────────────
+  Future<void> _handleScan(String studentId) async {
+    try {
+      final studentDoc = await FirebaseFirestore.instance
+          .collection('students')
+          .doc(studentId)
+          .get();
 
-    final pattern = RegExp(
-      r'(' +
-          labels.join('|') +
-          r'):\s*(.*?)(?=,\s*(?:' +
-          labels.join('|') +
-          r'):|$)',
-    );
+      if (!mounted) return;
 
-    final matches = pattern.allMatches(rawValue);
-    final parsed = <String, String>{};
-    for (final m in matches) {
-      final key = m.group(1)!;
-      final value = m.group(2)!.trim();
-      parsed[key] = value;
+      if (!studentDoc.exists) {
+        await _showInfoDialog(
+          'Student ID Not Found',
+          'No record found for Student ID "$studentId". Please check if the QR code is correct or contact the administrator.',
+        );
+        return;
+      }
+
+      final data = studentDoc.data()!;
+      final fullName = (data['fullName'] as String?) ?? 'Unknown student';
+      final program = (data['program'] as String?) ?? '';
+      final year = (data['year'] as String?) ?? '';
+      final section = (data['section'] as String?) ?? '';
+      final email = (data['email'] as String?) ?? '';
+      final studentType = (data['studentType'] as String?) ?? 'Student';
+
+      final now = DateTime.now();
+      final todayStr = DateFormat('yyyy-MM-dd').format(now);
+
+      // ── ⏳ I-check kung may naka-log na ngayong araw ───────────────────────
+      final existing = await FirebaseFirestore.instance
+          .collection('attendance')
+          .where('studentId', isEqualTo: studentId)
+          .where('date', isEqualTo: todayStr)
+          .limit(1)
+          .get();
+
+      if (!mounted) return;
+
+      if (existing.docs.isNotEmpty) {
+        await _showInfoDialog(
+          'Already Logged',
+          '$fullName has already been recorded for attendance today.',
+        );
+        return;
+      }
+
+      // ── ✅ I-determine ang attendance status ───────────────────────────
+      // ── ✅ Determine attendance status ───────────────────────────
+      final String status;
+
+      if (studentType != 'Student') {
+        // OJT / Working Student
+        status = studentType;
+      } else {
+        // Regular students
+        status = _lateMode ? 'Late' : 'Present';
+      }
+
+      final yearDigits = RegExp(r'^\d+').firstMatch(year)?.group(0) ?? '';
+      final yearSection = '$yearDigits-$section';
+
+final docId =
+    '${studentId}_${DateFormat('yyyyMMdd_HHmmss').format(now)}';
+
+      await FirebaseFirestore.instance.collection('attendance').doc(docId).set({
+        'studentId': studentId,
+        'fullName': fullName,
+        'attendanceStatus': status,
+        'date': todayStr,
+        'time': DateFormat('HH:mm').format(now),
+        'timestamp': Timestamp.fromDate(now),
+      });
+
+      if (!mounted) return;
+
+      await ScannedQrSheet.show(context, {
+        'studentId': studentId,
+        'name': fullName,
+        'program': program,
+        'year': year,
+        'section': section,
+        'yearSection': yearSection,
+        'email': email,
+        'studentType': studentType,
+        'status': status,
+        'dateToday': '${now.month}/${now.day}/${now.year}',
+        'timeRecorded': '${now.hour}:${now.minute.toString().padLeft(2, '0')}',
+      });
+    } catch (e) {
+      if (!mounted) return;
+      await _showInfoDialog(
+        'Error occurred',
+        'The scan could not be processed: $e',
+      );
     }
+  }
 
-    final yearDigits =
-        RegExp(r'^\d+').firstMatch(parsed['Year'] ?? '')?.group(0) ?? '';
-    final yearSection = '$yearDigits-${parsed['Section'] ?? ''}';
-
-    final now = DateTime.now();
-    return {
-      'raw': rawValue,
-      'studentId': parsed['ID'] ?? '',
-      'name': parsed['Name'] ?? '',
-      'program': parsed['Program'] ?? '',
-      'year': parsed['Year'] ?? '',
-      'section': parsed['Section'] ?? '',
-      'yearSection': yearSection,
-      'email': parsed['Email'] ?? '',
-      'studentType': parsed['Status'] ?? '',
-      'status': 'Present',
-      'dateToday': '${now.month}/${now.day}/${now.year}',
-      'timeRecorded': '${now.hour}:${now.minute.toString().padLeft(2, '0')}',
-    };
+  Future<void> _showInfoDialog(String title, String message) {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title, style: const TextStyle(fontFamily: 'K2D')),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   // ── 📱 UI builder ───────────────────────────
@@ -142,8 +210,6 @@ class _ScannerState extends State<Scanner> {
                   colors: [Colorpalatte.ojtcolor, Colorpalatte.secondary],
                 ),
               ),
-
-              // ── 🔎 Scanning point ───────────────────────────
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(AppRadius.lg),
                 child: LayoutBuilder(
@@ -182,7 +248,6 @@ class _ScannerState extends State<Scanner> {
             ),
           ),
 
-          // ── 🚨 Reminder text ───────────────────────────
           Center(
             child: Text(
               "Point your camera at QR Code to scan",
@@ -197,7 +262,6 @@ class _ScannerState extends State<Scanner> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // ── 🔄️ Flash button ───────────────────────────
               ValueListenableBuilder(
                 valueListenable: controller,
                 builder: (context, state, child) {
@@ -223,7 +287,6 @@ class _ScannerState extends State<Scanner> {
                 },
               ),
 
-              // ── 🔄️ Rerstart button ───────────────────────────
               ElevatedButton(
                 onPressed: () {
                   _isProcessing = false;
@@ -242,17 +305,23 @@ class _ScannerState extends State<Scanner> {
             ],
           ),
 
-          // ── ⏳ Late button ───────────────────────────
+          // ── ⏳ Late toggle button ───────────────────────────
           Center(
             child: ElevatedButton.icon(
-              onPressed: () {},
-              label: Text('Set Late'),
+              onPressed: () => setState(() => _lateMode = !_lateMode),
+              icon: Icon(
+                _lateMode ? Icons.check_circle : Icons.access_time,
+                color: Colorpalatte.maincolor,
+              ),
+              label: Text(_lateMode ? 'Late Mode: ON' : 'Set Late'),
               style: ElevatedButton.styleFrom(
                 fixedSize: Size(MediaQuery.widthOf(context) * 0.95, 40),
                 shape: BeveledRectangleBorder(
                   borderRadius: BorderRadiusGeometry.circular(5),
                 ),
-                backgroundColor: Colorpalatte.secondary,
+                backgroundColor: _lateMode
+                    ? Colorpalatte.errorcolor
+                    : Colorpalatte.secondary,
                 foregroundColor: Colorpalatte.maincolor,
               ),
             ),

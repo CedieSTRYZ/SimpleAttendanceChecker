@@ -3,6 +3,17 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+
+/// Default [FirebaseOptions] for use with your Firebase apps.
+///
+/// Example:
+/// ```dart
+/// import 'firebase_options.dart';
+/// // ...
+/// await Firebase.initializeApp(
+///   options: DefaultFirebaseOptions.currentPlatform,
+/// );
+/// ```
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -30,48 +41,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyB26tyN0d9WvU32_G1CSZlxMMdvc1IWhDY',
-    appId: '1:130226500796:web:18f4f9d04da3aa3feb0cb9',
-    messagingSenderId: '130226500796',
-    projectId: 'attendance-checker-87ebd',
-    authDomain: 'attendance-checker-87ebd.firebaseapp.com',
-    storageBucket: 'attendance-checker-87ebd.firebasestorage.app',
-    measurementId: 'G-4K7XXC2GMW',
+    apiKey: 'AIzaSyAYD4wN8hgJ9VOTkBaLz_SABIkktp93TSM',
+    appId: '1:640541823690:web:7fbb6a4f0f5df0be389a33',
+    messagingSenderId: '640541823690',
+    projectId: 'attendance-checker-47d12',
+    authDomain: 'attendance-checker-47d12.firebaseapp.com',
+    storageBucket: 'attendance-checker-47d12.firebasestorage.app',
+    measurementId: 'G-F24BPZ32D6',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCq9r4RZV3MuCgLiwwpmWsaeAekE8yOrpw',
-    appId: '1:130226500796:android:5f3c3d1c6e502945eb0cb9',
-    messagingSenderId: '130226500796',
-    projectId: 'attendance-checker-87ebd',
-    storageBucket: 'attendance-checker-87ebd.firebasestorage.app',
+    apiKey: 'AIzaSyCYnFdN6BBUBohgOLvHlj7PugL6aR3VotE',
+    appId: '1:640541823690:android:1c9c4fd053a4adbb389a33',
+    messagingSenderId: '640541823690',
+    projectId: 'attendance-checker-47d12',
+    storageBucket: 'attendance-checker-47d12.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCbdGppTt7B5YsEUdUIXqYvd-6zDmZBGoE',
-    appId: '1:130226500796:ios:03de74f1b50237b0eb0cb9',
-    messagingSenderId: '130226500796',
-    projectId: 'attendance-checker-87ebd',
-    storageBucket: 'attendance-checker-87ebd.firebasestorage.app',
+    apiKey: 'AIzaSyCFsD9xRLQCM69uID9E1JtzowhEOXy8SwQ',
+    appId: '1:640541823690:ios:8316ac43cd3ff346389a33',
+    messagingSenderId: '640541823690',
+    projectId: 'attendance-checker-47d12',
+    storageBucket: 'attendance-checker-47d12.firebasestorage.app',
     iosBundleId: 'com.example.simpleattendancechecker',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCbdGppTt7B5YsEUdUIXqYvd-6zDmZBGoE',
-    appId: '1:130226500796:ios:03de74f1b50237b0eb0cb9',
-    messagingSenderId: '130226500796',
-    projectId: 'attendance-checker-87ebd',
-    storageBucket: 'attendance-checker-87ebd.firebasestorage.app',
+    apiKey: 'AIzaSyCFsD9xRLQCM69uID9E1JtzowhEOXy8SwQ',
+    appId: '1:640541823690:ios:8316ac43cd3ff346389a33',
+    messagingSenderId: '640541823690',
+    projectId: 'attendance-checker-47d12',
+    storageBucket: 'attendance-checker-47d12.firebasestorage.app',
     iosBundleId: 'com.example.simpleattendancechecker',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyB26tyN0d9WvU32_G1CSZlxMMdvc1IWhDY',
-    appId: '1:130226500796:web:ac44cced73875e87eb0cb9',
-    messagingSenderId: '130226500796',
-    projectId: 'attendance-checker-87ebd',
-    authDomain: 'attendance-checker-87ebd.firebaseapp.com',
-    storageBucket: 'attendance-checker-87ebd.firebasestorage.app',
-    measurementId: 'G-WPXMFZ07GD',
+    apiKey: 'AIzaSyAYD4wN8hgJ9VOTkBaLz_SABIkktp93TSM',
+    appId: '1:640541823690:web:46c45ae03fa465bc389a33',
+    messagingSenderId: '640541823690',
+    projectId: 'attendance-checker-47d12',
+    authDomain: 'attendance-checker-47d12.firebaseapp.com',
+    storageBucket: 'attendance-checker-47d12.firebasestorage.app',
+    measurementId: 'G-PFFFFER2Z2',
   );
 }

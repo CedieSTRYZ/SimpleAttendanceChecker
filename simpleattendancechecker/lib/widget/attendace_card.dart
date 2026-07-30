@@ -1,28 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:simpleattendancechecker/constants/colorpalatte.dart';
+import 'package:simpleattendancechecker/constants/app_sizing.dart';
+import 'package:simpleattendancechecker/constants/color_palatte.dart';
 
 class AttendaceCard extends StatelessWidget {
   final Color color;
-  const AttendaceCard({super.key, this.color = Colorpalatte.presentColor});
+  const AttendaceCard({super.key, this.color = Colorpalatte.sucesscolor});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(10),
+      padding: EdgeInsets.all(AppSpacing.md),
       width: MediaQuery.widthOf(context) * 0.95,
       height: MediaQuery.heightOf(context) * 0.1,
       decoration: BoxDecoration(
-        color: Colorpalatte.containerColor,
-        borderRadius: BorderRadius.circular(10),
+        color: Colorpalatte.containercolor,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
-        spacing: 10,
+        spacing: AppSpacing.xm,
         children: [
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               color: color,
             ),
             //TODO: Make this function call all the first letter of their name (2 letters only) {#2fc,11}
@@ -30,9 +31,9 @@ class AttendaceCard extends StatelessWidget {
               child: Text(
                 'CA',
                 style: TextStyle(
-                  color: Colorpalatte.white,
+                  color: Colorpalatte.maincolor,
                   fontFamily: 'K2D',
-                  fontSize: 14,
+                  fontSize: AppFontSize.body,
                   fontWeight: FontWeight.w700,
                 ),
               ),

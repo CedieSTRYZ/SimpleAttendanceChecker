@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:simpleattendancechecker/constants/colorpalatte.dart';
-import 'package:simpleattendancechecker/widget/attendace_card.dart';
+import 'package:intl/intl.dart';
+import 'package:simpleattendancechecker/constants/app_sizing.dart';
+import 'package:simpleattendancechecker/constants/color_palatte.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -10,132 +11,132 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
+  // ── 🛠️ Local funtions ───────────────────────────
+  DateTime date = DateTime.now();
+  late String formattedDate = DateFormat('MMMM dd, yyyy').format(date);
+  late String formattedTime = DateFormat('hh:mm a').format(date);
+
+  // ── 🎴 UI builder ───────────────────────────
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(14.0),
-          child: Column(
-            spacing: 20,
-            children: [
-              // ── Text for overview ───────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Overview',
-                    style: TextStyle(
-                      fontFamily: 'K2D',
-                      fontSize: 36,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  //! No function for now {#3ea,9}
-                  Text(
-                    'This week',
-                    style: TextStyle(
-                      color: Colorpalatte.accent,
-                      fontFamily: 'K2D',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-
-              //TODO: Adjust this for displaying how many student are present, absent, and late  {#745,42}
-              SizedBox(
-                width: double.infinity,
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    Container(
-                      width: 180,
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: Colorpalatte.containerColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    Container(
-                      width: 180,
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: Colorpalatte.containerColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    Container(
-                      width: 180,
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: Colorpalatte.containerColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    Container(
-                      width: 180,
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: Colorpalatte.containerColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ── Text for sections ───────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Section 4-1',
-                    style: TextStyle(
-                      fontFamily: 'K2D',
-                      fontSize: 36,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    'See all',
-                    style: TextStyle(
-                      color: Colorpalatte.accent,
-                      fontFamily: 'K2D',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-
-              //TODO: Make this functionable base on how many student have been scanned for QRcode {#54e,18}
-              Column(
-                spacing: 10,
-                children: [
-                  AttendaceCard(),
-                  AttendaceCard(color: Colorpalatte.absentColor),
-                  AttendaceCard(color: Colorpalatte.lateColor),
-                  AttendaceCard(color: Colorpalatte.ojtworkingColor),
-                  AttendaceCard(color: Colorpalatte.absentColor),
-                  AttendaceCard(),
-                  AttendaceCard(),
-                  AttendaceCard(color: Colorpalatte.ojtworkingColor),
-                  AttendaceCard(color: Colorpalatte.lateColor),
-                  AttendaceCard(color: Colorpalatte.lateColor),
-                  AttendaceCard(color: Colorpalatte.lateColor),
-                  AttendaceCard(),
-                  AttendaceCard(),
-                ],
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        spacing: AppSpacing.sm,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Overview',
+            style: TextStyle(
+              fontFamily: 'K2D',
+              fontSize: AppFontSize.title,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
+      
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xm),
+            width: double.infinity,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colorpalatte.secondary,
+              borderRadius: BorderRadius.circular(AppRadius.xm),
+            ),
+            child: Row(
+              spacing: AppSpacing.xm,
+              children: [
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        formattedDate,
+                        style: TextStyle(
+                          color: Colorpalatte.maincolor,
+                          fontFamily: 'K2D',
+                          fontSize: AppFontSize.body,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+      
+                      Text(
+                        'Time: $formattedTime',
+                        style: TextStyle(
+                          color: Colorpalatte.maincolor,
+                          fontFamily: 'K2D',
+                          fontSize: AppFontSize.body,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      
+          // Fix function place all the total of present, absent, late, and ojt {#92e,31}
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              physics: ScrollPhysics(parent: null),
+              shrinkWrap: true,
+              padding: EdgeInsets.all(AppSpacing.sm),
+              scrollDirection: Axis.horizontal,
+              itemCount: 5,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal:  AppSpacing.xs),
+                  child: Container(
+                    padding: EdgeInsets.all(AppSpacing.sm),
+                    width: 120,
+                    decoration: BoxDecoration(
+                      color: Colorpalatte.containercolor,
+                      borderRadius: BorderRadius.circular(AppRadius.md)
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: AppSpacing.sm,
+                      children: [
+                        Text('45'),
+                        Text('Present'),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          Text(
+            'Sections',
+            style: TextStyle(
+              fontFamily: 'K2D',
+              fontSize: AppFontSize.title,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+      
+          // List of all sections {#83d,7}
+          // ListView.builder(
+          //   scrollDirection: Axis.horizontal,
+          //   itemCount: 1,
+          //   itemBuilder: (context, index) {
+          //     return;
+          //   },
+          // ),
+      
+          Container(),
+
+          // List of all student that present today {#bec,7}
+          // ListView.builder(
+          //   scrollDirection: Axis.verical,
+          //   itemCount: 1,
+          //   itemBuilder: (context, index) {
+          //     return;
+          //   },
+          // ),
+        ],
       ),
     );
   }

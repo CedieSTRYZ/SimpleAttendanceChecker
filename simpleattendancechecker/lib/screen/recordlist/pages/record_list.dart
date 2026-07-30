@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:simpleattendancechecker/constants/colorpalatte.dart';
+import 'package:simpleattendancechecker/constants/color_palatte.dart';
 
 class RecordList extends StatefulWidget {
   const RecordList({super.key});
@@ -18,12 +18,12 @@ class _RecordListState extends State<RecordList> {
           Container(
             width: 100,
             height: 100,
-            color: Colorpalatte.sucessColor,
+            color: Colorpalatte.sucesscolor,
           ),
           Container(
             width: 100,
             height: 100,
-            color: Colorpalatte.lateColor,
+            color: Colorpalatte.warningcolor,
           )
         ],
       ),

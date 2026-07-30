@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:simpleattendancechecker/constants/colorpalatte.dart';
+import 'package:simpleattendancechecker/constants/color_palatte.dart';
 import 'package:simpleattendancechecker/screen/home/pages/home.dart';
 class SplashLogo extends StatefulWidget {
   const SplashLogo({super.key});
@@ -28,7 +28,7 @@ class _SplashLogoState extends State<SplashLogo>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 1500),
     );
 
     _circleFade1 = CurvedAnimation(
@@ -62,7 +62,7 @@ class _SplashLogoState extends State<SplashLogo>
     _controller.forward();
 
     // ── 🧭 Navigation delay ───────────────────────────
-    Future.delayed(const Duration(milliseconds: 2800), () {
+    Future.delayed(const Duration(milliseconds: 2000), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -105,7 +105,7 @@ class _SplashLogoState extends State<SplashLogo>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colorpalatte.white,
+      backgroundColor: Colorpalatte.maincolor,
       body: Stack(
         children: [
           // decoration 1
@@ -114,7 +114,7 @@ class _SplashLogoState extends State<SplashLogo>
             right: 270,
             child: _circle(
               size: 140,
-              color: Colorpalatte.primary,
+              color: Colorpalatte.secondary,
               fade: _circleFade1,
             ),
           ),
@@ -123,7 +123,7 @@ class _SplashLogoState extends State<SplashLogo>
             right: 290,
             child: _circle(
               size: 140,
-              color: Colorpalatte.accent,
+              color: Colorpalatte.accentcolor,
               fade: _circleFade1,
             ),
           ),
@@ -134,7 +134,7 @@ class _SplashLogoState extends State<SplashLogo>
             left: 230,
             child: _circle(
               size: 220,
-              color: Colorpalatte.accent,
+              color: Colorpalatte.accentcolor,
               fade: _circleFade2,
             ),
           ),
@@ -143,7 +143,7 @@ class _SplashLogoState extends State<SplashLogo>
             left: 270,
             child: _circle(
               size: 220,
-              color: Colorpalatte.primary,
+              color: Colorpalatte.secondary,
               fade: _circleFade2,
             ),
           ),
@@ -154,7 +154,7 @@ class _SplashLogoState extends State<SplashLogo>
             left: 330,
             child: _circle(
               size: 100,
-              color: Colorpalatte.accent,
+              color: Colorpalatte.accentcolor,
               fade: _circleFade3,
             ),
           ),
@@ -163,7 +163,7 @@ class _SplashLogoState extends State<SplashLogo>
             left: 320,
             child: _circle(
               size: 100,
-              color: Colorpalatte.primary,
+              color: Colorpalatte.secondary,
               fade: _circleFade3,
             ),
           ),
@@ -174,7 +174,7 @@ class _SplashLogoState extends State<SplashLogo>
             right: 180,
             child: _circle(
               size: 300,
-              color: Colorpalatte.primary,
+              color: Colorpalatte.secondary,
               fade: _circleFade4,
             ),
           ),
@@ -183,7 +183,7 @@ class _SplashLogoState extends State<SplashLogo>
             right: 260,
             child: _circle(
               size: 300,
-              color: Colorpalatte.accent,
+              color: Colorpalatte.accentcolor,
               fade: _circleFade4,
             ),
           ),

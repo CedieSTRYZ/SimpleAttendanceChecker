@@ -1,6 +1,6 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:simpleattendancechecker/constants/colorpalatte.dart';
+import 'package:simpleattendancechecker/constants/color_palatte.dart';
 import 'package:simpleattendancechecker/screen/dashboard/pages/dashboard.dart';
 import 'package:simpleattendancechecker/screen/recordlist/pages/record_list.dart';
 import 'package:simpleattendancechecker/screen/scanner/pages/scanner.dart';
@@ -30,13 +30,13 @@ class _HomeState extends State<Home> {
     // ── 🏗️ Main structure ───────────────────────────
     return SafeArea(
       child: Scaffold(
-        backgroundColor: Colorpalatte.white,
+        backgroundColor: Colorpalatte.maincolor,
         appBar: CustomAppbar(),
         body: IndexedStack(index: _selectedIndex, children: pages),
         bottomNavigationBar: CurvedNavigationBar(
           index: _selectedIndex,
-          backgroundColor: Colors.white,
-          color: Colorpalatte.primary,
+          backgroundColor: Colorpalatte.maincolor,
+          color: Colorpalatte.secondary,
           animationDuration: Duration(milliseconds: 400),
           onTap: (index) {
             setState(() {
@@ -46,11 +46,11 @@ class _HomeState extends State<Home> {
           items: [
             Icon(
               Icons.qr_code_scanner_rounded,
-              color: Colorpalatte.white,
+              color: Colorpalatte.maincolor,
               size: 30,
             ),
-            Icon(Icons.home_rounded, color: Colorpalatte.white, size: 30),
-            Icon(Icons.list_alt_rounded, color: Colorpalatte.white, size: 30),
+            Icon(Icons.home_rounded, color: Colorpalatte.maincolor, size: 30),
+            Icon(Icons.list_alt_rounded, color: Colorpalatte.maincolor, size: 30),
           ],
         ),
       ),

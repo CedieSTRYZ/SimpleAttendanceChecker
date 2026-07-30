@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:simpleattendancechecker/constants/colorpalatte.dart';
+import 'package:simpleattendancechecker/constants/app_sizing.dart';
+import 'package:simpleattendancechecker/constants/color_palatte.dart';
+import 'package:simpleattendancechecker/screen/scanner/functions/scanned_qr_sheet.dart';
+import 'package:simpleattendancechecker/screen/scanner/functions/scanner_overlay_painter.dart';
 
 class Scanner extends StatefulWidget {
   final bool isActive;
@@ -50,19 +53,62 @@ class _ScannerState extends State<Scanner> {
     _isProcessing = true;
     await controller.stop();
 
-    if (mounted) return;
-    await _bottomSheet(rawValue);
+    if (!mounted) return;
+    final data = _parseQrData(rawValue);
+    await ScannedQrSheet.show(context, data);
+
+    _isProcessing = false;
+    if (widget.isActive) {
+      controller.start();
+    }
   }
 
-  //TODO: Make this connected to firebase and replace the parse function {#729,10}
   // ── 🔎 Parse functionss ───────────────────────────
   Map<String, String> _parseQrData(String rawValue) {
-    final parts = rawValue.split('-');
+    const labels = [
+      'ID',
+      'Name',
+      'Program',
+      'Year',
+      'Section',
+      'Email',
+      'Status',
+    ];
+
+    final pattern = RegExp(
+      r'(' +
+          labels.join('|') +
+          r'):\s*(.*?)(?=,\s*(?:' +
+          labels.join('|') +
+          r'):|$)',
+    );
+
+    final matches = pattern.allMatches(rawValue);
+    final parsed = <String, String>{};
+    for (final m in matches) {
+      final key = m.group(1)!;
+      final value = m.group(2)!.trim();
+      parsed[key] = value;
+    }
+
+    final yearDigits =
+        RegExp(r'^\d+').firstMatch(parsed['Year'] ?? '')?.group(0) ?? '';
+    final yearSection = '$yearDigits-${parsed['Section'] ?? ''}';
+
+    final now = DateTime.now();
     return {
       'raw': rawValue,
-      'section': parts.isNotEmpty ? parts[0] : '',
-      'schoolYear': parts.length > 1 ? parts[1] : '',
-      'studentId': parts.length > 2 ? parts[2] : '',
+      'studentId': parsed['ID'] ?? '',
+      'name': parsed['Name'] ?? '',
+      'program': parsed['Program'] ?? '',
+      'year': parsed['Year'] ?? '',
+      'section': parsed['Section'] ?? '',
+      'yearSection': yearSection,
+      'email': parsed['Email'] ?? '',
+      'studentType': parsed['Status'] ?? '',
+      'status': 'Present',
+      'dateToday': '${now.month}/${now.day}/${now.year}',
+      'timeRecorded': '${now.hour}:${now.minute.toString().padLeft(2, '0')}',
     };
   }
 
@@ -70,9 +116,9 @@ class _ScannerState extends State<Scanner> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(14.0),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
-        spacing: 20,
+        spacing: AppSpacing.xs,
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -80,7 +126,7 @@ class _ScannerState extends State<Scanner> {
             'Scan for Attendance',
             style: TextStyle(
               fontFamily: 'K2D',
-              fontSize: 32,
+              fontSize: AppFontSize.title,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -89,17 +135,17 @@ class _ScannerState extends State<Scanner> {
           Center(
             child: Container(
               width: MediaQuery.widthOf(context) * 0.85,
-              height: MediaQuery.heightOf(context) * 0.5,
+              height: MediaQuery.heightOf(context) * 0.45,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 gradient: LinearGradient(
-                  colors: [Colorpalatte.ojtworkingColor, Colorpalatte.primary],
+                  colors: [Colorpalatte.ojtcolor, Colorpalatte.secondary],
                 ),
               ),
 
               // ── 🔎 Scanning point ───────────────────────────
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final size = Size(
@@ -123,9 +169,9 @@ class _ScannerState extends State<Scanner> {
                         ),
                         CustomPaint(
                           size: size,
-                          painter: _ScannerOverlayPainter(
+                          painter: ScannerOverlayPainter(
                             scanWindow: scanWindow,
-                            borderColor: Colorpalatte.accent,
+                            borderColor: Colorpalatte.accentcolor,
                           ),
                         ),
                       ],
@@ -142,7 +188,7 @@ class _ScannerState extends State<Scanner> {
               "Point your camera at QR Code to scan",
               style: TextStyle(
                 fontFamily: 'K2D',
-                fontSize: 18,
+                fontSize: AppFontSize.subtitle,
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -163,10 +209,10 @@ class _ScannerState extends State<Scanner> {
                       shape: CircleBorder(),
                       fixedSize: Size(40, 40),
                       iconColor: torchOn
-                          ? Colorpalatte.accent
-                          : Colorpalatte.mutedtextColor,
+                          ? Colorpalatte.accentcolor
+                          : Colorpalatte.mutedcolor,
                       iconSize: 30,
-                      backgroundColor: Colorpalatte.containerColor,
+                      backgroundColor: Colorpalatte.containercolor,
                     ),
                     child: Center(
                       child: Icon(
@@ -187,9 +233,9 @@ class _ScannerState extends State<Scanner> {
                   padding: EdgeInsets.zero,
                   shape: CircleBorder(),
                   fixedSize: Size(40, 40),
-                  iconColor: Colorpalatte.mutedtextColor,
+                  iconColor: Colorpalatte.mutedcolor,
                   iconSize: 30,
-                  backgroundColor: Colorpalatte.containerColor,
+                  backgroundColor: Colorpalatte.containercolor,
                 ),
                 child: Icon(Icons.restart_alt_rounded),
               ),
@@ -206,161 +252,13 @@ class _ScannerState extends State<Scanner> {
                 shape: BeveledRectangleBorder(
                   borderRadius: BorderRadiusGeometry.circular(5),
                 ),
-                backgroundColor: Colorpalatte.primary,
-                foregroundColor: Colorpalatte.white,
+                backgroundColor: Colorpalatte.secondary,
+                foregroundColor: Colorpalatte.maincolor,
               ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────────
-  // ── 📦 Widgets builder ──────────────────────────────────────────────────────
-  // ─────────────────────────────────────────────────────────────────────────────────
-  Future<void> _bottomSheet(String rawValue) {
-    final data = _parseQrData(rawValue);
-
-    return showModalBottomSheet(
-      context: context,
-      isDismissible: false,
-      enableDrag: false,
-      builder: (BuildContext context) {
-        return SizedBox(
-          height: 400,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 12,
-              children: [
-                Text(
-                  'Scanned QR Code',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-                ),
-                _dataRow('Section', data['section']!),
-                _dataRow('School Year', data['schoolYear']!),
-                _dataRow('Student ID', data['studentId']!),
-                const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    child: const Text('Close'),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ).whenComplete(() {
-      _isProcessing = false;
-      if (widget.isActive) {
-        controller.start();
-      }
-    });
-  }
-
-  Widget _dataRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: TextStyle(color: Colorpalatte.mutedtextColor)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
-      ],
-    );
-  }
-}
-
-// ── 🎨 Overlay painter: dims outside the box, draws corner brackets ───────────
-class _ScannerOverlayPainter extends CustomPainter {
-  final Rect scanWindow;
-  final Color borderColor;
-
-  _ScannerOverlayPainter({required this.scanWindow, required this.borderColor});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Dim everything outside the scan window
-    final backgroundPath = Path()
-      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
-    final cutoutPath = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(scanWindow, const Radius.circular(16)),
-      );
-    final dimPath = Path.combine(
-      PathOperation.difference,
-      backgroundPath,
-      cutoutPath,
-    );
-    canvas.drawPath(
-      dimPath,
-      Paint()..color = Colors.black.withValues(alpha: 0.5),
-    );
-
-    // Corner brackets
-    const cornerLength = 28.0;
-    const strokeWidth = 5.0;
-    final cornerPaint = Paint()
-      ..color = borderColor
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    final r = scanWindow;
-
-    // top-left
-    canvas.drawLine(
-      r.topLeft,
-      r.topLeft + const Offset(cornerLength, 0),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      r.topLeft,
-      r.topLeft + const Offset(0, cornerLength),
-      cornerPaint,
-    );
-    // top-right
-    canvas.drawLine(
-      r.topRight,
-      r.topRight + const Offset(-cornerLength, 0),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      r.topRight,
-      r.topRight + const Offset(0, cornerLength),
-      cornerPaint,
-    );
-    // bottom-left
-    canvas.drawLine(
-      r.bottomLeft,
-      r.bottomLeft + const Offset(cornerLength, 0),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      r.bottomLeft,
-      r.bottomLeft + const Offset(0, -cornerLength),
-      cornerPaint,
-    );
-    // bottom-right
-    canvas.drawLine(
-      r.bottomRight,
-      r.bottomRight + const Offset(-cornerLength, 0),
-      cornerPaint,
-    );
-    canvas.drawLine(
-      r.bottomRight,
-      r.bottomRight + const Offset(0, -cornerLength),
-      cornerPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _ScannerOverlayPainter oldDelegate) {
-    return oldDelegate.scanWindow != scanWindow ||
-        oldDelegate.borderColor != borderColor;
   }
 }

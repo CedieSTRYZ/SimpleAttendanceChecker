@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:simpleattendancechecker/constants/colorpalatte.dart';
+import 'package:simpleattendancechecker/constants/app_sizing.dart';
+import 'package:simpleattendancechecker/constants/color_palatte.dart';
 
 class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppbar({super.key});
@@ -8,10 +9,10 @@ class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14.0),
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
       width: double.infinity,
       height: MediaQuery.heightOf(context) * 0.08,
-      decoration: BoxDecoration(color: Colorpalatte.white),
+      decoration: BoxDecoration(color: Colorpalatte.maincolor),
       child: Row(
         spacing: 10,
         children: [
@@ -21,7 +22,7 @@ class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
             height: MediaQuery.heightOf(context) * 0.11,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colorpalatte.primary, width: 2),
+              border: Border.all(color: Colorpalatte.secondary, width: 2),
             ),
             child: ClipOval(
               child: Image(
@@ -41,7 +42,7 @@ class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
                   'Welcome to',
                   style: TextStyle(
                     fontFamily: 'K2D',
-                    fontSize: 16,
+                    fontSize: AppFontSize.body,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -49,7 +50,7 @@ class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
                   'Attendance Checker',
                   style: TextStyle(
                     fontFamily: 'K2D',
-                    fontSize: 20,
+                    fontSize: AppFontSize.subtitle,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -62,8 +63,8 @@ class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
             width: MediaQuery.widthOf(context) * 0.09,
             height: MediaQuery.heightOf(context) * 0.04,
             decoration: BoxDecoration(
-              color: Colorpalatte.containerColor,
-              borderRadius: BorderRadius.circular(10),
+              color: Colorpalatte.containercolor,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               boxShadow: [
                 BoxShadow(
                   color: Color.fromRGBO(0, 0, 0, 0.12),

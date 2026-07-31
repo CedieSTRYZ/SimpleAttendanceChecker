@@ -3,15 +3,40 @@ import 'package:simpleattendancechecker/constants/app_sizing.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
 
 class AttendaceCard extends StatelessWidget {
-  final Color color;
-  const AttendaceCard({super.key, this.color = Colorpalatte.sucesscolor});
+  final String fullName;
+  final String studentId;
+  final String time;
+  final String status;
+
+  const AttendaceCard({
+    super.key,
+    required this.fullName,
+    required this.studentId,
+    required this.time,
+    required this.status,
+  });
+
+  Color get _statusColor {
+    switch (status) {
+      case 'Present':
+        return Colorpalatte.sucesscolor;
+      case 'Late':
+        return Colorpalatte.warningcolor;
+      case 'Absent':
+        return Colorpalatte.errorcolor;
+      case 'OJT':
+      case 'Working Student':
+        return Colorpalatte.ojtcolor;
+      default:
+        return Colorpalatte.mutedcolor;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.md),
-      width: MediaQuery.widthOf(context) * 0.95,
-      height: MediaQuery.heightOf(context) * 0.1,
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colorpalatte.containercolor,
         borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -20,34 +45,47 @@ class AttendaceCard extends StatelessWidget {
         spacing: AppSpacing.xm,
         children: [
           Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              color: color,
-            ),
-            //TODO: Make this function call all the first letter of their name (2 letters only) {#2fc,11}
-            child: Center(
-              child: Text(
-                'CA',
-                style: TextStyle(
-                  color: Colorpalatte.maincolor,
-                  fontFamily: 'K2D',
-                  fontSize: AppFontSize.body,
-                  fontWeight: FontWeight.w700,
+            width: 14,
+            height: 14,
+            decoration:
+                BoxDecoration(shape: BoxShape.circle, color: _statusColor),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  studentId,
+                  style: TextStyle(
+                    fontFamily: 'K2D',
+                    fontSize: AppFontSize.body,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
+                Text(
+                  fullName,
+                  style: TextStyle(
+                    fontFamily: 'K2D',
+                    fontSize: AppFontSize.caption,
+                    color: Colorpalatte.mutedcolor,
+                  ),
+                ),
+              ],
             ),
           ),
-
-          //TODO: add function that displa all the name, id, and email of student that scanned {#271,9}
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('06-2324-033121'),
-              Text('Cedie Adrigado'),
-              Text('josa.adrigado.sjc@phinmaed.com'),
+              Text(time, style: TextStyle(fontFamily: 'K2D', fontSize: AppFontSize.body)),
+              Text(
+                status,
+                style: TextStyle(
+                  fontFamily: 'K2D',
+                  fontSize: AppFontSize.caption,
+                  fontWeight: FontWeight.w700,
+                  color: _statusColor,
+                ),
+              ),
             ],
           ),
         ],

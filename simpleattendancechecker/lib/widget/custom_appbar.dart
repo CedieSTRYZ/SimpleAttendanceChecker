@@ -1,11 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:simpleattendancechecker/constants/app_sizing.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
+import 'package:simpleattendancechecker/services/biometric_service.dart';
 
-class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
+class CustomAppbar extends StatefulWidget implements PreferredSizeWidget {
   const CustomAppbar({super.key});
 
-  // ── 📱 UI builder ───────────────────────────
+  @override
+  State<CustomAppbar> createState() => _CustomAppbarState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(90);
+}
+
+class _CustomAppbarState extends State<CustomAppbar> {
+  bool _fingerprintEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreference();
+  }
+
+  Future<void> _loadPreference() async {
+    final enabled = await BiometricService.isEnabled();
+    if (mounted) setState(() => _fingerprintEnabled = enabled);
+  }
+
+  Future<void> _toggleFingerprint() async {
+    if (!_fingerprintEnabled) {
+      final supported = await BiometricService.isDeviceSupported();
+      if (!supported) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Walang biometric na naka-set up sa device na ito.'),
+            ),
+          );
+        }
+        return;
+      }
+    }
+    final newValue = !_fingerprintEnabled;
+    await BiometricService.setEnabled(newValue);
+    if (mounted) setState(() => _fingerprintEnabled = newValue);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -16,7 +56,6 @@ class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
       child: Row(
         spacing: 10,
         children: [
-          // ── 🖼️ Appbar logo ───────────────────────────
           Container(
             width: MediaQuery.widthOf(context) * 0.11,
             height: MediaQuery.heightOf(context) * 0.11,
@@ -31,8 +70,6 @@ class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ),
           ),
-
-          // ── 📜 Welcome text ───────────────────────────
           const Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -57,8 +94,6 @@ class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
               ],
             ),
           ),
-
-          // ── ⚙️ Setting button ───────────────────────────
           Container(
             width: MediaQuery.widthOf(context) * 0.09,
             height: MediaQuery.heightOf(context) * 0.04,
@@ -69,29 +104,34 @@ class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
                 BoxShadow(
                   color: Color.fromRGBO(0, 0, 0, 0.12),
                   blurRadius: 2,
-                  spreadRadius: 0,
-                  offset: Offset(0, 1),
-                ),
-                BoxShadow(
-                  color: Color.fromRGBO(0, 0, 0, 0.12),
-                  blurRadius: 2,
-                  spreadRadius: 0,
                   offset: Offset(0, 1),
                 ),
               ],
             ),
-            child: IconButton(
+            child: PopupMenuButton<void>(
               padding: EdgeInsets.zero,
-              onPressed: () {},
-              alignment: Alignment.center,
-              icon: Icon(Icons.settings_rounded),
+              icon: const Icon(Icons.settings_rounded),
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  onTap: _toggleFingerprint,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Enable Fingerprint'),
+                      Icon(
+                        _fingerprintEnabled
+                            ? Icons.check_box
+                            : Icons.check_box_outline_blank,
+                        color: Colorpalatte.secondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(90);
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
 import 'package:simpleattendancechecker/screen/home/pages/home.dart';
+import 'package:simpleattendancechecker/services/biometric_service.dart';
+
 class SplashLogo extends StatefulWidget {
   const SplashLogo({super.key});
 
@@ -63,19 +65,57 @@ class _SplashLogoState extends State<SplashLogo>
 
     // ── 🧭 Navigation delay ───────────────────────────
     Future.delayed(const Duration(milliseconds: 2000), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (_, _, _) => const Home(),
-            transitionsBuilder: (_, animation, _, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
-        );
-      }
+      if (mounted) _proceedToHome();
     });
+  }
+
+  // ── 🔐 I-check muna ang biometric bago pumasok sa Home ───────────────
+  Future<void> _proceedToHome() async {
+    final biometricEnabled = await BiometricService.isEnabled();
+    bool proceed = true;
+
+    if (biometricEnabled) {
+      proceed = await BiometricService.authenticate();
+    }
+
+    if (!mounted) return;
+
+    if (proceed) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, _, _) => const Home(),
+          transitionsBuilder: (_, animation, _, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+    } else {
+      _showAuthFailedDialog();
+    }
+  }
+
+  void _showAuthFailedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Authentication Failed'),
+        content: const Text(
+          'Kailangan ng valid na fingerprint para buksan ang app.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _proceedToHome();
+            },
+            child: const Text('Try Again'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

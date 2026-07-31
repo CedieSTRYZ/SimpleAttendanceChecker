@@ -16,10 +16,10 @@ class Scanner extends StatefulWidget {
 }
 
 class _ScannerState extends State<Scanner> {
-  // ── 🛠️ Functions ───────────────────────────
   late final MobileScannerController controller;
   bool _isProcessing = false;
   bool _lateMode = false;
+  bool _isMarkingAbsent = false;
 
   @override
   void initState() {
@@ -66,7 +66,7 @@ class _ScannerState extends State<Scanner> {
     }
   }
 
-  // ── 🔎 Firestore lookup + attendance logging ───────────────────────────
+  // ── 🔎 Firestore lookup — preview lang, walang isusulat pa ────────────
   Future<void> _handleScan(String studentId) async {
     try {
       final studentDoc = await FirebaseFirestore.instance
@@ -95,7 +95,6 @@ class _ScannerState extends State<Scanner> {
       final now = DateTime.now();
       final todayStr = DateFormat('yyyy-MM-dd').format(now);
 
-      // ── ⏳ I-check kung may naka-log na ngayong araw ───────────────────────
       final existing = await FirebaseFirestore.instance
           .collection('attendance')
           .where('studentId', isEqualTo: studentId)
@@ -113,54 +112,153 @@ class _ScannerState extends State<Scanner> {
         return;
       }
 
-      // ── ✅ I-determine ang attendance status ───────────────────────────
-      // ── ✅ Determine attendance status ───────────────────────────
       final String status;
-
       if (studentType != 'Student') {
-        // OJT / Working Student
         status = studentType;
       } else {
-        // Regular students
         status = _lateMode ? 'Late' : 'Present';
       }
 
       final yearDigits = RegExp(r'^\d+').firstMatch(year)?.group(0) ?? '';
       final yearSection = '$yearDigits-$section';
 
-final docId =
-    '${studentId}_${DateFormat('yyyyMMdd_HHmmss').format(now)}';
-
-      await FirebaseFirestore.instance.collection('attendance').doc(docId).set({
-        'studentId': studentId,
-        'fullName': fullName,
-        'attendanceStatus': status,
-        'date': todayStr,
-        'time': DateFormat('HH:mm').format(now),
-        'timestamp': Timestamp.fromDate(now),
-      });
-
       if (!mounted) return;
 
-      await ScannedQrSheet.show(context, {
-        'studentId': studentId,
-        'name': fullName,
-        'program': program,
-        'year': year,
-        'section': section,
-        'yearSection': yearSection,
-        'email': email,
-        'studentType': studentType,
-        'status': status,
-        'dateToday': '${now.month}/${now.day}/${now.year}',
-        'timeRecorded': '${now.hour}:${now.minute.toString().padLeft(2, '0')}',
-      });
+      await ScannedQrSheet.show(
+        context,
+        {
+          'studentId': studentId,
+          'name': fullName,
+          'program': program,
+          'year': year,
+          'section': section,
+          'yearSection': yearSection,
+          'email': email,
+          'studentType': studentType,
+          'status': status,
+          'dateToday': '${now.month}/${now.day}/${now.year}',
+          'timeRecorded':
+              '${now.hour}:${now.minute.toString().padLeft(2, '0')}',
+        },
+        onConfirm: () async {
+          final docId =
+              '${studentId}_${DateFormat('yyyyMMdd_HHmmss').format(now)}';
+          await FirebaseFirestore.instance
+              .collection('attendance')
+              .doc(docId)
+              .set({
+                'studentId': studentId,
+                'fullName': fullName,
+                'attendanceStatus': status,
+                'program': program, // ← bago
+                'year': year, // ← bago
+                'section': section, // ← bago
+                'date': todayStr,
+                'time': DateFormat('HH:mm').format(now),
+                'timestamp': Timestamp.fromDate(now),
+              });
+        },
+      );
     } catch (e) {
       if (!mounted) return;
       await _showInfoDialog(
         'Error occurred',
         'The scan could not be processed: $e',
       );
+    }
+  }
+
+  // ── 🚫 Mark absent para sa mga hindi na-scan ngayong araw ─────────────
+  Future<void> _markAbsentees() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mark as Absent'),
+        content: const Text(
+          'I-mamark na "Absent" ang lahat ng regular na estudyante na hindi na-scan ngayong araw. Hindi kasama ang OJT at Working Student. Sigurado ka ba?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isMarkingAbsent = true);
+
+    try {
+      final now = DateTime.now();
+      final todayStr = DateFormat('yyyy-MM-dd').format(now);
+
+      final attendanceToday = await FirebaseFirestore.instance
+          .collection('attendance')
+          .where('date', isEqualTo: todayStr)
+          .get();
+
+      final loggedIds = attendanceToday.docs
+          .map((doc) => doc.data()['studentId'] as String?)
+          .whereType<String>()
+          .toSet();
+
+      final studentsSnapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .get();
+
+      final batch = FirebaseFirestore.instance.batch();
+      int markedCount = 0;
+
+      for (final doc in studentsSnapshot.docs) {
+        final data = doc.data();
+        final studentType = (data['studentType'] as String?) ?? 'Student';
+        final studentId = doc.id;
+
+        if (studentType != 'Student') continue;
+        if (loggedIds.contains(studentId)) continue;
+
+        final docId =
+            '${studentId}_${DateFormat('yyyyMMdd_HHmmss').format(now)}';
+        final ref = FirebaseFirestore.instance
+            .collection('attendance')
+            .doc(docId);
+
+        batch.set(ref, {
+          'studentId': studentId,
+          'fullName': data['fullName'] ?? '',
+          'attendanceStatus': 'Absent',
+          'program': data['program'] ?? '', 
+          'year': data['year'] ?? '', 
+          'section': data['section'] ?? '',
+          'date': todayStr,
+          'time': DateFormat('HH:mm').format(now),
+          'timestamp': Timestamp.fromDate(now),
+        });
+        markedCount++;
+      }
+
+      if (markedCount > 0) {
+        await batch.commit();
+      }
+
+      if (!mounted) return;
+      await _showInfoDialog(
+        'Done',
+        markedCount > 0
+            ? '$markedCount na estudyante ang na-mark na "Absent".'
+            : 'Wala nang estudyanteng hindi pa naka-log ngayong araw.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      await _showInfoDialog('Error occurred', 'Hindi na-process: $e');
+    } finally {
+      if (mounted) setState(() => _isMarkingAbsent = false);
     }
   }
 
@@ -180,7 +278,6 @@ final docId =
     );
   }
 
-  // ── 📱 UI builder ───────────────────────────
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -198,8 +295,6 @@ final docId =
               fontWeight: FontWeight.w700,
             ),
           ),
-
-          // ── 🔍 Scanner area ───────────────────────────
           Center(
             child: Container(
               width: MediaQuery.widthOf(context) * 0.85,
@@ -247,7 +342,6 @@ final docId =
               ),
             ),
           ),
-
           Center(
             child: Text(
               "Point your camera at QR Code to scan",
@@ -259,6 +353,7 @@ final docId =
             ),
           ),
 
+          // ── 🔦 Flash + ⏳ Late toggle ───────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -286,42 +381,49 @@ final docId =
                   );
                 },
               ),
-
               ElevatedButton(
-                onPressed: () {
-                  _isProcessing = false;
-                  controller.start();
-                },
+                onPressed: () => setState(() => _lateMode = !_lateMode),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.zero,
                   shape: CircleBorder(),
                   fixedSize: Size(40, 40),
-                  iconColor: Colorpalatte.mutedcolor,
+                  iconColor: _lateMode
+                      ? Colorpalatte.errorcolor
+                      : Colorpalatte.mutedcolor,
                   iconSize: 30,
                   backgroundColor: Colorpalatte.containercolor,
                 ),
-                child: Icon(Icons.restart_alt_rounded),
+                child: Icon(
+                  _lateMode ? Icons.watch_later_rounded : Icons.access_time,
+                ),
               ),
             ],
           ),
 
-          // ── ⏳ Late toggle button ───────────────────────────
+          // ── 🚫 Mark as Absent ───────────────────────────
           Center(
             child: ElevatedButton.icon(
-              onPressed: () => setState(() => _lateMode = !_lateMode),
-              icon: Icon(
-                _lateMode ? Icons.check_circle : Icons.access_time,
-                color: Colorpalatte.maincolor,
-              ),
-              label: Text(_lateMode ? 'Late Mode: ON' : 'Set Late'),
+              onPressed: _isMarkingAbsent ? null : _markAbsentees,
+              icon: _isMarkingAbsent
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colorpalatte.maincolor,
+                      ),
+                    )
+                  : Icon(
+                      Icons.person_off_rounded,
+                      color: Colorpalatte.maincolor,
+                    ),
+              label: Text(_isMarkingAbsent ? 'Marking...' : 'Mark as Absent'),
               style: ElevatedButton.styleFrom(
                 fixedSize: Size(MediaQuery.widthOf(context) * 0.95, 40),
                 shape: BeveledRectangleBorder(
                   borderRadius: BorderRadiusGeometry.circular(5),
                 ),
-                backgroundColor: _lateMode
-                    ? Colorpalatte.errorcolor
-                    : Colorpalatte.secondary,
+                backgroundColor: Colorpalatte.secondary,
                 foregroundColor: Colorpalatte.maincolor,
               ),
             ),

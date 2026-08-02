@@ -7,9 +7,7 @@ import 'package:simpleattendancechecker/screen/home/pages/splash_logo.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // ── 📴 Offline persistence (para gumana kahit walang internet) ───────────
   FirebaseFirestore.instance.settings = const Settings(

@@ -34,7 +34,7 @@ class _CustomAppbarState extends State<CustomAppbar> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Walang biometric na naka-set up sa device na ito.'),
+              content: Text('No biometrics are set up on this device.'),
             ),
           );
         }

@@ -102,9 +102,7 @@ class _SplashLogoState extends State<SplashLogo>
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text('Authentication Failed'),
-        content: const Text(
-          'Kailangan ng valid na fingerprint para buksan ang app.',
-        ),
+        content: const Text('A valid fingerprint is required to open the app.'),
         actions: [
           TextButton(
             onPressed: () {

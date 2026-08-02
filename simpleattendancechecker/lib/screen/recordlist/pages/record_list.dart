@@ -11,21 +11,20 @@ class RecordList extends StatefulWidget {
 class _RecordListState extends State<RecordList> {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 100,
-            height: 100,
-            color: Colorpalatte.sucesscolor,
-          ),
-          Container(
-            width: 100,
-            height: 100,
-            color: Colorpalatte.warningcolor,
-          )
-        ],
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(width: 100, height: 100, color: Colorpalatte.sucesscolor),
+            Container(
+              width: 100,
+              height: 100,
+              color: Colorpalatte.warningcolor,
+            ),
+          ],
+        ),
       ),
     );
   }

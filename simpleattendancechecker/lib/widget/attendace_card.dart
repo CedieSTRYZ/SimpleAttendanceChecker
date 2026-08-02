@@ -47,8 +47,10 @@ class AttendaceCard extends StatelessWidget {
           Container(
             width: 14,
             height: 14,
-            decoration:
-                BoxDecoration(shape: BoxShape.circle, color: _statusColor),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _statusColor,
+            ),
           ),
           Expanded(
             child: Column(
@@ -76,7 +78,10 @@ class AttendaceCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(time, style: TextStyle(fontFamily: 'K2D', fontSize: AppFontSize.body)),
+              Text(
+                time,
+                style: TextStyle(fontFamily: 'K2D', fontSize: AppFontSize.body),
+              ),
               Text(
                 status,
                 style: TextStyle(

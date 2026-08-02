@@ -155,12 +155,14 @@ class ScannedQrSheet {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colorpalatte.mutedcolor,
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadiusGeometry.circular(AppRadius.md),
+                                borderRadius: BorderRadiusGeometry.circular(
+                                  AppRadius.md,
+                                ),
                               ),
                             ),
-                            onPressed:
-                                isSaving ? null : () => Navigator.pop(context),
+                            onPressed: isSaving
+                                ? null
+                                : () => Navigator.pop(context),
                             child: const Text(
                               'Cancel',
                               style: TextStyle(
@@ -177,8 +179,9 @@ class ScannedQrSheet {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colorpalatte.secondary,
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadiusGeometry.circular(AppRadius.md),
+                                borderRadius: BorderRadiusGeometry.circular(
+                                  AppRadius.md,
+                                ),
                               ),
                             ),
                             onPressed: isSaving
@@ -188,7 +191,9 @@ class ScannedQrSheet {
                                     try {
                                       await onConfirm();
                                     } finally {
-                                      if (context.mounted) Navigator.pop(context);
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                      }
                                     }
                                   },
                             child: isSaving

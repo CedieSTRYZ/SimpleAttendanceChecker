@@ -32,8 +32,7 @@ class ScannerOverlayPainter extends CustomPainter {
       ..color = borderColor
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin
-          .round
+      ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
 
     final r = scanWindow;

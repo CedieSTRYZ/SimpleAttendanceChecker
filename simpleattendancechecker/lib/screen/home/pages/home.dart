@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
 import 'package:simpleattendancechecker/screen/dashboard/pages/dashboard.dart';
 import 'package:simpleattendancechecker/screen/scanner/pages/scanner.dart';
@@ -16,42 +18,52 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   // ── 🛠️ Method functions ───────────────────────────
   int _selectedIndex = 1;
+  DateTime _selectedDate = DateTime.now();
 
-  // ── 📱 Builder UI ───────────────────────────
+  // ── 🔄 Pull-to-refresh — works regardless of which tab is active ──────
+  Future<void> _onRefresh() async {
+    final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    try {
+      await FirebaseFirestore.instance
+          .collection('attendance')
+          .where('date', isEqualTo: dateStr)
+          .get(const GetOptions(source: Source.server));
+    } catch (_) {
+      // falls back to cached/local data if this fails (offline)
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // ── 🛠️ Local functions ───────────────────────────
     final List<Widget> pages = [
       Scanner(isActive: _selectedIndex == 0),
-      Dashboard(),
+      Dashboard(selectedDate: _selectedDate, onDateChanged: (DateTime value) {  },),
+      SummaryReports(),
+      Dashboard(
+        selectedDate: _selectedDate,
+        onDateChanged: (date) => setState(() => _selectedDate = date),
+      ),
       SummaryReports(),
     ];
 
     // ── 🏗️ Main structure ───────────────────────────
     return Scaffold(
       backgroundColor: Colorpalatte.maincolor,
-      appBar: CustomAppbar(),
+      appBar: const CustomAppbar(),
       body: SafeArea(
-        child: IndexedStack(index: _selectedIndex, children: pages),
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          child: IndexedStack(index: _selectedIndex, children: pages),
+        ),
       ),
       bottomNavigationBar: CurvedNavigationBar(
         index: _selectedIndex,
         backgroundColor: Colorpalatte.maincolor,
         color: Colorpalatte.secondary,
-        animationDuration: Duration(milliseconds: 400),
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-
-        // ── 🛠️ Bottom Appbar icons ───────────────────────────
+        animationDuration: const Duration(milliseconds: 400),
+        onTap: (index) => setState(() => _selectedIndex = index),
         items: [
-          Icon(
-            Icons.qr_code_scanner_rounded,
-            color: Colorpalatte.maincolor,
-            size: 30,
-          ),
+          Icon(Icons.qr_code_scanner_rounded, color: Colorpalatte.maincolor, size: 30),
           Icon(Icons.home_rounded, color: Colorpalatte.maincolor, size: 30),
           Icon(Icons.list_alt_rounded, color: Colorpalatte.maincolor, size: 30),
         ],

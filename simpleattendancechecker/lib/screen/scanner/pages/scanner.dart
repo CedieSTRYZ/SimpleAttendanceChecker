@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:simpleattendancechecker/constants/app_sizing.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
 import 'package:simpleattendancechecker/screen/scanner/functions/scanned_qr_sheet.dart';
 import 'package:simpleattendancechecker/screen/scanner/functions/scanner_overlay_painter.dart';
+import 'package:simpleattendancechecker/services/biometric_service.dart';
 
 class Scanner extends StatefulWidget {
   final bool isActive;
@@ -17,6 +19,9 @@ class Scanner extends StatefulWidget {
 
 class _ScannerState extends State<Scanner> {
   late final MobileScannerController controller;
+  final TextEditingController _manualIdController = TextEditingController();
+  final FocusNode _manualIdFocusNode = FocusNode();
+
   bool _isProcessing = false;
   bool _lateMode = false;
   bool _isMarkingAbsent = false;
@@ -28,6 +33,7 @@ class _ScannerState extends State<Scanner> {
       formats: [BarcodeFormat.qrCode],
       autoStart: widget.isActive,
     );
+    _manualIdController.addListener(_onManualIdChanged);
   }
 
   @override
@@ -44,7 +50,18 @@ class _ScannerState extends State<Scanner> {
   @override
   void dispose() {
     controller.dispose();
+    _manualIdController.dispose();
+    _manualIdFocusNode.dispose();
     super.dispose();
+  }
+
+  // ── ⌨️ Manual entry — auto-submits once it reaches 14 characters ──────
+  void _onManualIdChanged() {
+    final value = _manualIdController.text.trim();
+    if (value.length == 14 && !_isProcessing) {
+      _manualIdController.clear();
+      _handleScan(value);
+    }
   }
 
   Future<void> _onDetect(BarcodeCapture capture) async {
@@ -53,21 +70,21 @@ class _ScannerState extends State<Scanner> {
     final rawValue = barcode?.rawValue?.trim();
     if (rawValue == null || rawValue.isEmpty) return;
 
+    // ── 🩹 Black screen fix: we no longer stop/start the camera ──────
+    // we just flag _isProcessing so further detections are ignored
+    // while the confirmation sheet is open.
     _isProcessing = true;
-    await controller.stop();
 
     if (mounted) {
       await _handleScan(rawValue);
     }
 
     _isProcessing = false;
-    if (mounted && widget.isActive) {
-      controller.start();
-    }
   }
 
-  // ── 🔎 Firestore lookup — preview lang, walang isusulat pa ────────────
+  // ── 🔎 Firestore lookup — preview only, nothing written yet ───────────
   Future<void> _handleScan(String studentId) async {
+    _isProcessing = true;
     try {
       final studentDoc = await FirebaseFirestore.instance
           .collection('students')
@@ -141,6 +158,19 @@ class _ScannerState extends State<Scanner> {
               '${now.hour}:${now.minute.toString().padLeft(2, '0')}',
         },
         onConfirm: () async {
+          // ── 🔐 Biometric confirmation is required before saving "Late" ──
+          if (status == 'Late') {
+            final verified = await BiometricService.authenticate();
+            if (!mounted) return;
+            if (!verified) {
+              await _showInfoDialog(
+                'Not Confirmed',
+                'The "Late" mark was cancelled because biometric verification failed.',
+              );
+              return; // nothing gets written to Firestore
+            }
+          }
+
           final docId =
               '${studentId}_${DateFormat('yyyyMMdd_HHmmss').format(now)}';
           await FirebaseFirestore.instance
@@ -150,9 +180,9 @@ class _ScannerState extends State<Scanner> {
                 'studentId': studentId,
                 'fullName': fullName,
                 'attendanceStatus': status,
-                'program': program, // ← bago
-                'year': year, // ← bago
-                'section': section, // ← bago
+                'program': program,
+                'year': year,
+                'section': section,
                 'date': todayStr,
                 'time': DateFormat('HH:mm').format(now),
                 'timestamp': Timestamp.fromDate(now),
@@ -165,32 +195,103 @@ class _ScannerState extends State<Scanner> {
         'Error occurred',
         'The scan could not be processed: $e',
       );
+    } finally {
+      _isProcessing = false;
+      if (mounted) {
+        _manualIdFocusNode.requestFocus();
+      }
     }
   }
 
-  // ── 🚫 Mark absent para sa mga hindi na-scan ngayong araw ─────────────
+  // ── 🚫 Mark absent — with a section dropdown + biometric confirmation ──
   Future<void> _markAbsentees() async {
+    // 1. Get the student list first so we know the available sections
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> allStudents;
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('students')
+          .get();
+      allStudents = snap.docs;
+    } catch (e) {
+      if (!mounted) return;
+      await _showInfoDialog(
+        'Error occurred',
+        'Could not retrieve the student list: $e',
+      );
+      return;
+    }
+
+    const allStudentsOption = 'All Students (All Programs/Sections)';
+
+    final sections = <String>{};
+    for (final doc in allStudents) {
+      final label = _studentSectionLabel(doc.data());
+      if (label.isNotEmpty) sections.add(label);
+    }
+    final sortedSections = <String>[
+      allStudentsOption,
+      ...sections.toList()..sort(),
+    ];
+
+    String? selectedSection;
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Mark as Absent'),
-        content: const Text(
-          'I-mamark na "Absent" ang lahat ng regular na estudyante na hindi na-scan ngayong araw. Hindi kasama ang OJT at Working Student. Sigurado ka ba?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Mark as Absent'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Select the Program - Year & Section, or mark all students:',
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedSection,
+                    isExpanded: true,
+                    hint: const Text('Select an option'),
+                    items: sortedSections
+                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                        .toList(),
+                    onChanged: (v) => setDialogState(() => selectedSection = v),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: selectedSection == null
+                      ? null
+                      : () => Navigator.pop(context, true),
+                  child: const Text('Confirm'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true || selectedSection == null) return;
+
+    final isAllStudents = selectedSection == allStudentsOption;
+
+    final verified = await BiometricService.authenticate();
+    if (!mounted) return;
+    if (!verified) {
+      await _showInfoDialog(
+        'Not Confirmed',
+        'Mark as Absent was cancelled because biometric verification failed.',
+      );
+      return;
+    }
 
     setState(() => _isMarkingAbsent = true);
 
@@ -208,20 +309,24 @@ class _ScannerState extends State<Scanner> {
           .whereType<String>()
           .toSet();
 
-      final studentsSnapshot = await FirebaseFirestore.instance
-          .collection('students')
-          .get();
-
       final batch = FirebaseFirestore.instance.batch();
       int markedCount = 0;
 
-      for (final doc in studentsSnapshot.docs) {
+      for (final doc in allStudents) {
         final data = doc.data();
-        final studentType = (data['studentType'] as String?) ?? 'Student';
-        final studentId = doc.id;
+        final label = _studentSectionLabel(data);
 
-        if (studentType != 'Student') continue;
-        if (loggedIds.contains(studentId)) continue;
+        // ── skip if a specific section was chosen and this student isn't in it ──
+        if (!isAllStudents && label != selectedSection) {
+          continue;
+        }
+
+        final studentId = doc.id;
+        if (loggedIds.contains(studentId)) continue; // already logged
+
+        final studentType = (data['studentType'] as String?) ?? 'Student';
+        // ── If OJT/Working Student, use studentType itself as the status ──
+        final status = studentType == 'Student' ? 'Absent' : studentType;
 
         final docId =
             '${studentId}_${DateFormat('yyyyMMdd_HHmmss').format(now)}';
@@ -232,9 +337,9 @@ class _ScannerState extends State<Scanner> {
         batch.set(ref, {
           'studentId': studentId,
           'fullName': data['fullName'] ?? '',
-          'attendanceStatus': 'Absent',
-          'program': data['program'] ?? '', 
-          'year': data['year'] ?? '', 
+          'attendanceStatus': status,
+          'program': data['program'] ?? '',
+          'year': data['year'] ?? '',
           'section': data['section'] ?? '',
           'date': todayStr,
           'time': DateFormat('HH:mm').format(now),
@@ -248,23 +353,34 @@ class _ScannerState extends State<Scanner> {
       }
 
       if (!mounted) return;
+      final scopeLabel = isAllStudents ? 'all students' : '"$selectedSection"';
       await _showInfoDialog(
         'Done',
         markedCount > 0
-            ? '$markedCount na estudyante ang na-mark na "Absent".'
-            : 'Wala nang estudyanteng hindi pa naka-log ngayong araw.',
+            ? '$markedCount student(s) from $scopeLabel were logged.'
+            : 'No unlogged students remain for $scopeLabel today.',
       );
     } catch (e) {
       if (!mounted) return;
-      await _showInfoDialog('Error occurred', 'Hindi na-process: $e');
+      await _showInfoDialog('Error occurred', 'Could not process: $e');
     } finally {
       if (mounted) setState(() => _isMarkingAbsent = false);
     }
   }
 
+  // ── 🏷️ Section label from the student profile (students collection) ──
+  String _studentSectionLabel(Map<String, dynamic> d) {
+    final program = (d['program'] ?? '').toString();
+    final year = (d['year'] ?? '').toString();
+    final section = (d['section'] ?? '').toString();
+    final yearDigits = RegExp(r'^\d+').firstMatch(year)?.group(0) ?? '';
+    if (program.isEmpty && yearDigits.isEmpty && section.isEmpty) return '';
+    return '$program $yearDigits-$section'.trim();
+  }
+
   Future<void> _showInfoDialog(String title, String message) {
     return showDialog(
-      context: context,
+      context: context,   
       builder: (context) => AlertDialog(
         title: Text(title, style: const TextStyle(fontFamily: 'K2D')),
         content: Text(message),
@@ -280,11 +396,11 @@ class _ScannerState extends State<Scanner> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
-        spacing: AppSpacing.xs,
-        mainAxisAlignment: MainAxisAlignment.center,
+        spacing: AppSpacing.sm,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -295,10 +411,12 @@ class _ScannerState extends State<Scanner> {
               fontWeight: FontWeight.w700,
             ),
           ),
+
+          // ── 📷 Scanner viewfinder ───────────────────────────
           Center(
             child: Container(
               width: MediaQuery.widthOf(context) * 0.85,
-              height: MediaQuery.heightOf(context) * 0.45,
+              height: MediaQuery.heightOf(context) * 0.4,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppRadius.lg),
                 gradient: LinearGradient(
@@ -342,6 +460,7 @@ class _ScannerState extends State<Scanner> {
               ),
             ),
           ),
+
           Center(
             child: Text(
               "Point your camera at QR Code to scan",
@@ -353,79 +472,136 @@ class _ScannerState extends State<Scanner> {
             ),
           ),
 
-          // ── 🔦 Flash + ⏳ Late toggle ───────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ValueListenableBuilder(
-                valueListenable: controller,
-                builder: (context, state, child) {
-                  final torchOn = state.torchState == TorchState.on;
-                  return ElevatedButton(
-                    onPressed: () => controller.toggleTorch(),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      shape: CircleBorder(),
-                      fixedSize: Size(40, 40),
-                      iconColor: torchOn
-                          ? Colorpalatte.accentcolor
-                          : Colorpalatte.mutedcolor,
-                      iconSize: 30,
-                      backgroundColor: Colorpalatte.containercolor,
+          // ── 🎛️ Control panel — clean and organized ─────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: Colorpalatte.containercolor,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ValueListenableBuilder(
+                      valueListenable: controller,
+                      builder: (context, state, child) {
+                        final torchOn = state.torchState == TorchState.on;
+                        return Row(
+                          children: [
+                            IconButton(
+                              onPressed: () => controller.toggleTorch(),
+                              icon: Icon(
+                                torchOn
+                                    ? Icons.bolt_rounded
+                                    : Icons.bolt_outlined,
+                              ),
+                              color: torchOn
+                                  ? Colorpalatte.accentcolor
+                                  : Colorpalatte.mutedcolor,
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colorpalatte.maincolor,
+                                shape: const CircleBorder(),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              'Flash',
+                              style: TextStyle(
+                                fontFamily: 'K2D',
+                                fontSize: AppFontSize.caption,
+                                color: Colorpalatte.mutedcolor,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
-                    child: Center(
-                      child: Icon(
-                        torchOn ? Icons.bolt_rounded : Icons.bolt_outlined,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'Late Mode',
+                          style: TextStyle(
+                            fontFamily: 'K2D',
+                            fontSize: AppFontSize.caption,
+                            fontWeight: _lateMode
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                            color: _lateMode
+                                ? Colorpalatte.errorcolor
+                                : Colorpalatte.mutedcolor,
+                          ),
+                        ),
+                        Switch(
+                          value: _lateMode,
+                          activeThumbColor: Colorpalatte.errorcolor,
+                          onChanged: (v) => setState(() => _lateMode = v),
+                        ),
+                      ],
                     ),
-                  );
-                },
-              ),
-              ElevatedButton(
-                onPressed: () => setState(() => _lateMode = !_lateMode),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  shape: CircleBorder(),
-                  fixedSize: Size(40, 40),
-                  iconColor: _lateMode
-                      ? Colorpalatte.errorcolor
-                      : Colorpalatte.mutedcolor,
-                  iconSize: 30,
-                  backgroundColor: Colorpalatte.containercolor,
+                  ],
                 ),
-                child: Icon(
-                  _lateMode ? Icons.watch_later_rounded : Icons.access_time,
-                ),
-              ),
-            ],
-          ),
+                const Divider(height: AppSpacing.lg),
 
-          // ── 🚫 Mark as Absent ───────────────────────────
-          Center(
-            child: ElevatedButton.icon(
-              onPressed: _isMarkingAbsent ? null : _markAbsentees,
-              icon: _isMarkingAbsent
-                  ? const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colorpalatte.maincolor,
-                      ),
-                    )
-                  : Icon(
-                      Icons.person_off_rounded,
-                      color: Colorpalatte.maincolor,
+                // ── ⌨️ Manual Student ID entry (alternative to QR) ────────
+                TextField(
+                  controller: _manualIdController,
+                  focusNode: _manualIdFocusNode,
+                  maxLength: 14,
+                  inputFormatters: [LengthLimitingTextInputFormatter(14)],
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: InputDecoration(
+                    counterText: '',
+                    hintText: '06-1234-567890',
+                    prefixIcon: const Icon(Icons.badge_outlined),
+                    filled: true,
+                    fillColor: Colorpalatte.maincolor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderSide: BorderSide.none,
                     ),
-              label: Text(_isMarkingAbsent ? 'Marking...' : 'Mark as Absent'),
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(MediaQuery.widthOf(context) * 0.95, 40),
-                shape: BeveledRectangleBorder(
-                  borderRadius: BorderRadiusGeometry.circular(5),
+                  ),
                 ),
-                backgroundColor: Colorpalatte.secondary,
-                foregroundColor: Colorpalatte.maincolor,
-              ),
+                const SizedBox(height: AppSpacing.sm),
+
+                // ── 🚫 Mark as Absent ───────────────────────────
+                ElevatedButton.icon(
+                  onPressed: _isMarkingAbsent ? null : _markAbsentees,
+                  icon: _isMarkingAbsent
+                      ? SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colorpalatte.errorcolor,
+                          ),
+                        )
+                      : Icon(
+                          Icons.person_off_rounded,
+                          color: Colorpalatte.errorcolor,
+                        ),
+                  label: Text(
+                    _isMarkingAbsent ? 'Marking...' : 'Mark as Absent',
+                    style: TextStyle(color: Colorpalatte.errorcolor),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colorpalatte.errorcolor.withValues(
+                      alpha: 0.1,
+                    ),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.sm,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      side: BorderSide(color: Colorpalatte.errorcolor),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

@@ -19,7 +19,7 @@ class _HomeState extends State<Home> {
   int _selectedIndex = 1;
   DateTime _selectedDate = DateTime.now();
 
-  // ── 🔄 Pull-to-refresh — gagana kahit anong tab ang active ────────────
+  // ── 🔄 Pull-to-refresh — works regardless of which tab is active ──────
   Future<void> _onRefresh() async {
     final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
     try {
@@ -28,7 +28,7 @@ class _HomeState extends State<Home> {
           .where('date', isEqualTo: dateStr)
           .get(const GetOptions(source: Source.server));
     } catch (_) {
-      // babalik lang sa cached/local data kung mag-fail (offline)
+      // falls back to cached/local data if this fails (offline)
     }
   }
 
@@ -43,34 +43,26 @@ class _HomeState extends State<Home> {
       const RecordList(),
     ];
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colorpalatte.maincolor,
-        appBar: const CustomAppbar(),
-        body: RefreshIndicator(
+    return Scaffold(
+      backgroundColor: Colorpalatte.maincolor,
+      appBar: const CustomAppbar(),
+      body: SafeArea(
+        child: RefreshIndicator(
           onRefresh: _onRefresh,
           child: IndexedStack(index: _selectedIndex, children: pages),
         ),
-        bottomNavigationBar: CurvedNavigationBar(
-          index: _selectedIndex,
-          backgroundColor: Colorpalatte.maincolor,
-          color: Colorpalatte.secondary,
-          animationDuration: const Duration(milliseconds: 400),
-          onTap: (index) => setState(() => _selectedIndex = index),
-          items: [
-            Icon(
-              Icons.qr_code_scanner_rounded,
-              color: Colorpalatte.maincolor,
-              size: 30,
-            ),
-            Icon(Icons.home_rounded, color: Colorpalatte.maincolor, size: 30),
-            Icon(
-              Icons.list_alt_rounded,
-              color: Colorpalatte.maincolor,
-              size: 30,
-            ),
-          ],
-        ),
+      ),
+      bottomNavigationBar: CurvedNavigationBar(
+        index: _selectedIndex,
+        backgroundColor: Colorpalatte.maincolor,
+        color: Colorpalatte.secondary,
+        animationDuration: const Duration(milliseconds: 400),
+        onTap: (index) => setState(() => _selectedIndex = index),
+        items: [
+          Icon(Icons.qr_code_scanner_rounded, color: Colorpalatte.maincolor, size: 30),
+          Icon(Icons.home_rounded, color: Colorpalatte.maincolor, size: 30),
+          Icon(Icons.list_alt_rounded, color: Colorpalatte.maincolor, size: 30),
+        ],
       ),
     );
   }

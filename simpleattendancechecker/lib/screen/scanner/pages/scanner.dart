@@ -221,21 +221,17 @@ class _ScannerState extends State<Scanner> {
       return;
     }
 
+    const allStudentsOption = 'All Students (All Programs/Sections)';
+
     final sections = <String>{};
     for (final doc in allStudents) {
       final label = _studentSectionLabel(doc.data());
       if (label.isNotEmpty) sections.add(label);
     }
-    final sortedSections = sections.toList()..sort();
-
-    if (sortedSections.isEmpty) {
-      if (!mounted) return;
-      await _showInfoDialog(
-        'No Section Found',
-        'No program/year/section values were found in the student list.',
-      );
-      return;
-    }
+    final sortedSections = <String>[
+      allStudentsOption,
+      ...sections.toList()..sort(),
+    ];
 
     String? selectedSection;
 
@@ -251,13 +247,13 @@ class _ScannerState extends State<Scanner> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Select the Program - Year & Section:',
+                    'Select the Program - Year & Section, or mark all students:',
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   DropdownButtonFormField<String>(
                     initialValue: selectedSection,
                     isExpanded: true,
-                    hint: const Text('Select a section'),
+                    hint: const Text('Select an option'),
                     items: sortedSections
                         .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                         .toList(),
@@ -284,6 +280,8 @@ class _ScannerState extends State<Scanner> {
     );
 
     if (confirmed != true || selectedSection == null) return;
+
+    final isAllStudents = selectedSection == allStudentsOption;
 
     final verified = await BiometricService.authenticate();
     if (!mounted) return;
@@ -317,8 +315,10 @@ class _ScannerState extends State<Scanner> {
       for (final doc in allStudents) {
         final data = doc.data();
         final label = _studentSectionLabel(data);
-        if (label != selectedSection) {
-          continue; // skip if not in the selected section
+
+        // ── skip if a specific section was chosen and this student isn't in it ──
+        if (!isAllStudents && label != selectedSection) {
+          continue;
         }
 
         final studentId = doc.id;
@@ -353,11 +353,12 @@ class _ScannerState extends State<Scanner> {
       }
 
       if (!mounted) return;
+      final scopeLabel = isAllStudents ? 'all students' : '"$selectedSection"';
       await _showInfoDialog(
         'Done',
         markedCount > 0
-            ? '$markedCount student(s) from "$selectedSection" were logged.'
-            : 'No unlogged students remain in "$selectedSection" for today.',
+            ? '$markedCount student(s) from $scopeLabel were logged.'
+            : 'No unlogged students remain for $scopeLabel today.',
       );
     } catch (e) {
       if (!mounted) return;
@@ -587,7 +588,9 @@ class _ScannerState extends State<Scanner> {
                     style: TextStyle(color: Colorpalatte.errorcolor),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colorpalatte.errorcolor.withValues(alpha: 0.1),
+                    backgroundColor: Colorpalatte.errorcolor.withValues(
+                      alpha: 0.1,
+                    ),
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(
                       vertical: AppSpacing.sm,

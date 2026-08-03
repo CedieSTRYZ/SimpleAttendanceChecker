@@ -25,8 +25,9 @@ class AttendaceCard extends StatelessWidget {
       case 'Absent':
         return Colorpalatte.errorcolor;
       case 'OJT':
-      case 'Working Student':
         return Colorpalatte.ojtcolor;
+      case 'Working Student':
+        return Colorpalatte.infocolor;
       default:
         return Colorpalatte.mutedcolor;
     }
@@ -39,19 +40,34 @@ class AttendaceCard extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colorpalatte.containercolor,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        boxShadow: [
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.12),
+            blurRadius: 3,
+            spreadRadius: 0,
+            offset: Offset(0, 1),
+          ),
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.24),
+            blurRadius: 2,
+            spreadRadius: 0,
+            offset: Offset(0, 1),
+          ),
+        ],
+        borderRadius: BorderRadius.circular(AppRadius.xm),
       ),
       child: Row(
         spacing: AppSpacing.xm,
         children: [
           Container(
-            width: 14,
-            height: 14,
+            width: 18,
+            height: 18,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: _statusColor,
             ),
           ),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,6 +91,7 @@ class AttendaceCard extends StatelessWidget {
               ],
             ),
           ),
+
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [

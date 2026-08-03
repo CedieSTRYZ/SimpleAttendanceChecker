@@ -14,7 +14,7 @@ class SummaryReports extends StatefulWidget {
 }
 
 class _SummaryReportsState extends State<SummaryReports> {
-  // ── 🛠️ State revebiration ───────────────────────────
+  // ── 🛠️ State variables ───────────────────────────
   bool showDetails = false;
   Map<String, dynamic>? selectedSession;
   String selectedSection = 'BSIT 4-1';
@@ -139,7 +139,7 @@ class _SummaryReportsState extends State<SummaryReports> {
         ),
 
         // ── ⌛ Date and timer ───────────────────────────
-        DateTimeCard(),
+        DateTimeCard(onDateChanged: (value) {}, selectedDate: DateTime.now()),
 
         // ── 📊 Section List Card ───────────────────────────
         SizedBox(
@@ -221,7 +221,7 @@ class _SummaryReportsState extends State<SummaryReports> {
         ),
 
         // ── ⌛ Date and timer (reused) ───────────────────────────
-        DateTimeCard(),
+        DateTimeCard(onDateChanged: (value) {}, selectedDate: DateTime.now()),
 
         // ── 🔍 Search bar + Export button ───────────────────────────
         Row(

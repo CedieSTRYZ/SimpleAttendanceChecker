@@ -7,6 +7,10 @@ import 'package:intl/intl.dart';
 import 'package:simpleattendancechecker/constants/app_sizing.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
 import 'package:simpleattendancechecker/widget/attendace_card.dart';
+import 'package:simpleattendancechecker/widget/date_time_card.dart';
+import 'package:simpleattendancechecker/widget/searchbar_card.dart';
+import 'package:simpleattendancechecker/widget/section_card.dart';
+import 'package:simpleattendancechecker/widget/stats_chips_card.dart';
 
 class Dashboard extends StatefulWidget {
   final DateTime selectedDate;
@@ -23,26 +27,32 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  final TextEditingController _searchController = TextEditingController();
+  // ── 🛠️ State variables ───────────────────────────
+  final GlobalKey _headerContentKey = GlobalKey();
+  double _headerHeight = 278;
 
   String _searchQuery = '';
   String _selectedSection = 'All';
   String? _selectedStatus;
   bool _sortAscending = true;
 
-  late final Timer _clockTimer;
-  DateTime _now = DateTime.now();
-
   bool _isOffline = false;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
+  // ── 🛠️ Methods / Functions ───────────────────────────
+  String _sectionLabel(Map<String, dynamic> d) {
+    final program = (d['program'] ?? '').toString();
+    final year = (d['year'] ?? '').toString();
+    final section = (d['section'] ?? '').toString();
+    final yearDigits = RegExp(r'^\d+').firstMatch(year)?.group(0) ?? '';
+    if (program.isEmpty && yearDigits.isEmpty && section.isEmpty) return '';
+    return '$program $yearDigits-$section'.trim();
+  }
+
+  // ── 🎨 Flutter override ───────────────────────────
   @override
   void initState() {
     super.initState();
-
-    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _now = DateTime.now());
-    });
 
     Connectivity().checkConnectivity().then((result) {
       if (mounted) {
@@ -62,46 +72,39 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   void dispose() {
-    _searchController.dispose();
-    _clockTimer.cancel();
     _connectivitySub?.cancel();
     super.dispose();
   }
 
-  String _sectionLabel(Map<String, dynamic> d) {
-    final program = (d['program'] ?? '').toString();
-    final year = (d['year'] ?? '').toString();
-    final section = (d['section'] ?? '').toString();
-    final yearDigits = RegExp(r'^\d+').firstMatch(year)?.group(0) ?? '';
-    if (program.isEmpty && yearDigits.isEmpty && section.isEmpty) return '';
-    return '$program $yearDigits-$section'.trim();
+  // ── Helper widgets ───────────────────────────
+  void _toggleStatus(String value) {
+    setState(() => _selectedStatus = _selectedStatus == value ? null : value);
   }
 
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: widget.selectedDate,
-      firstDate: DateTime(2024),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null) widget.onDateChanged(picked);
+  void _measureHeaderHeight() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _headerContentKey.currentContext;
+      if (ctx == null) return;
+      final box = ctx.findRenderObject() as RenderBox;
+      final newHeight = box.size.height;
+      if (newHeight != _headerHeight && mounted) {
+        setState(() => _headerHeight = newHeight);
+      }
+    });
   }
 
+  // ── 🎴 UI Build ───────────────────────────
   @override
   Widget build(BuildContext context) {
-    final dateStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
-    final isToday = dateStr == DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final formattedDate = DateFormat(
-      'MMMM dd, yyyy',
-    ).format(widget.selectedDate);
-    final formattedTime = DateFormat('hh:mm:ss a').format(_now);
+    // ── 🛠️ Local functions ───────────────────────────
+    final dateStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);   
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance
           .collection('attendance')
           .where('date', isEqualTo: dateStr)
           .orderBy('timestamp', descending: true)
-          .snapshots(),
+          .snapshots(), 
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Padding(
@@ -116,6 +119,7 @@ class _DashboardState extends State<Dashboard> {
           );
         }
 
+        // Function of stats card {#89b,85}
         final docs = snapshot.data?.docs ?? [];
 
         final sections = <String>{'All'};
@@ -165,120 +169,99 @@ class _DashboardState extends State<Dashboard> {
                   : nameB.compareTo(nameA);
             });
 
+        final statsItems = [
+          (
+            count: presentCount,
+            label: 'Present',
+            status: 'Present',
+            color: Colorpalatte.sucesscolor,
+          ),
+          (
+            count: lateCount,
+            label: 'Late',
+            status: 'Late',
+            color: Colorpalatte.warningcolor,
+          ),
+          (
+            count: absentCount,
+            label: 'Absent',
+            status: 'Absent',
+            color: Colorpalatte.errorcolor,
+          ),
+          (
+            count: ojtCount,
+            label: 'OJT',
+            status: 'OJT',
+            color: Colorpalatte.ojtcolor,
+          ),
+          (
+            count: workingCount,
+            label: 'Working',
+            status: 'Working Student',
+            color: Colorpalatte.infocolor,
+          ),
+        ];
+
+        final sectionList = sections.toList();
+
+        // ── 🎨 UI Structures ───────────────────────────
+        _measureHeaderHeight();
         return CustomScrollView(
           slivers: [
-            // ── 📌 Sticky header — Overview + Stats + Sections ──────────
+            // ── 📌 Sticky header ───────────────────────────
+            // Sliver Function {#bb4,79}
             SliverPersistentHeader(
               pinned: true,
               delegate: _PinnedHeaderDelegate(
-                height: 278,
+                height: _headerHeight,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.md,
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                  ),
+                  key: _headerContentKey,
+                  padding: EdgeInsets.all(AppSpacing.md),
+
                   child: Column(
+                    spacing: AppSpacing.sm,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // ── 🗨️ Overview title ───────────────────────────
                       Text(
                         'Overview',
                         style: TextStyle(
                           fontFamily: 'K2D',
-                          fontSize: AppFontSize.title,
+                          fontSize: AppFontSize.display,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.sm),
 
-                      GestureDetector(
-                        onTap: _pickDate,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.xm,
-                          ),
-                          width: double.infinity,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colorpalatte.secondary,
-                            borderRadius: BorderRadius.circular(AppRadius.xm),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.calendar_today_rounded,
-                                    size: 16,
-                                    color: Colorpalatte.maincolor,
-                                  ),
-                                  const SizedBox(width: AppSpacing.xs),
-                                  Text(
-                                    formattedDate,
-                                    style: TextStyle(
-                                      color: Colorpalatte.maincolor,
-                                      fontFamily: 'K2D',
-                                      fontSize: AppFontSize.body,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                isToday
-                                    ? 'Time: $formattedTime'
-                                    : 'Tap to change date',
-                                style: TextStyle(
-                                  color: Colorpalatte.maincolor,
-                                  fontFamily: 'K2D',
-                                  fontSize: AppFontSize.body,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      // ── ⌛ Date and timer ───────────────────────────
+                      DateTimeCard(
+                        selectedDate: widget.selectedDate,
+                        onDateChanged: widget.onDateChanged,
                       ),
-                      const SizedBox(height: AppSpacing.sm),
 
+                      // ── 📊 Attendance stats ───────────────────────────
                       SizedBox(
-                        height: 90,
-                        child: ListView(
+                        height: 70,
+                        child: ListView.separated(
                           scrollDirection: Axis.horizontal,
-                          children: [
-                            _statChip(
-                              '$presentCount',
-                              'Present',
-                              Colorpalatte.sucesscolor,
-                            ),
-                            _statChip(
-                              '$lateCount',
-                              'Late',
-                              Colorpalatte.warningcolor,
-                            ),
-                            _statChip(
-                              '$absentCount',
-                              'Absent',
-                              Colorpalatte.errorcolor,
-                            ),
-                            _statChip(
-                              '$ojtCount',
-                              'OJT',
-                              Colorpalatte.ojtcolor,
-                            ),
-                            _statChip(
-                              '$workingCount',
-                              'Working',
-                              Colorpalatte.infocolor,
-                              value: 'Working Student',
-                            ),
-                          ],
+                          itemCount: statsItems.length,
+                          separatorBuilder: (context, index) {
+                            return const SizedBox(width: AppSpacing.sm);
+                          },
+                          itemBuilder: (context, index) {
+                            final item = statsItems[index];
+
+                            return StatsChipsCard(
+                              count: '${item.count}',
+                              label: item.label,
+                              color: item.color,
+                              selected: _selectedStatus == item.status,
+                              onTap: () => _toggleStatus(item.status),
+                            );
+                          },
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.sm),
 
+                      // ── 🗂️ Section filter ───────────────────────────
                       Text(
                         'Sections',
                         style: TextStyle(
@@ -287,39 +270,23 @@ class _DashboardState extends State<Dashboard> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.xs),
+
+                      // ── 🗂️ Section filter ───────────────────────────
                       SizedBox(
                         height: 40,
-                        child: ListView(
+                        child: ListView.separated(
                           scrollDirection: Axis.horizontal,
-                          children: sections.map((s) {
-                            final selected = s == _selectedSection;
-                            return Padding(
-                              padding: const EdgeInsets.only(
-                                right: AppSpacing.xs,
-                              ),
-                              child: ChoiceChip(
-                                label: Text(s),
-                                selected: selected,
-                                onSelected: (_) =>
-                                    setState(() => _selectedSection = s),
-                                selectedColor: Colorpalatte.secondary,
-                                backgroundColor: Colorpalatte.containercolor,
-                                labelStyle: TextStyle(
-                                  color: selected
-                                      ? Colorpalatte.maincolor
-                                      : Colorpalatte.secondary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadius.lg,
-                                  ),
-                                  side: BorderSide.none,
-                                ),
-                              ),
+                          itemCount: sectionList.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(width: AppSpacing.xs),
+                          itemBuilder: (context, index) {
+                            final s = sectionList[index];
+                            return SectionCard(
+                              label: s,
+                              selected: s == _selectedSection,
+                              onTap: () => setState(() => _selectedSection = s),
                             );
-                          }).toList(),
+                          },
                         ),
                       ),
                     ],
@@ -328,6 +295,8 @@ class _DashboardState extends State<Dashboard> {
               ),
             ),
 
+            // Offline warning {#313,39}
+            // ── ⚠️ Offline mode warning ───────────────────────────
             if (_isOffline)
               SliverToBoxAdapter(
                 child: Padding(
@@ -367,7 +336,8 @@ class _DashboardState extends State<Dashboard> {
                 ),
               ),
 
-            // ── 🔍 Search + sort + attendance count (gumagalaw sa scroll) ──
+            // Attendance and Search Bar {#5c4,67}
+            // ── 📌 Attendance section list ───────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -400,29 +370,16 @@ class _DashboardState extends State<Dashboard> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.xs),
+
                     Row(
                       children: [
                         Expanded(
-                          child: TextField(
-                            controller: _searchController,
+                          child: SearchbarCard(
                             onChanged: (value) =>
                                 setState(() => _searchQuery = value),
-                            decoration: InputDecoration(
-                              hintText: 'Search by name or student ID',
-                              prefixIcon: const Icon(Icons.search),
-                              filled: true,
-                              fillColor: Colorpalatte.containercolor,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppRadius.md,
-                                ),
-                                borderSide: BorderSide.none,
-                              ),
-                            ),
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.xs),
+
                         Container(
                           decoration: BoxDecoration(
                             color: Colorpalatte.containercolor,
@@ -470,7 +427,7 @@ class _DashboardState extends State<Dashboard> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       if (index.isOdd) {
-                        return const SizedBox(height: AppSpacing.xs);
+                        return const SizedBox(height: AppSpacing.xm);
                       }
                       final d = filteredDocs[index ~/ 2].data();
                       return AttendaceCard(
@@ -489,47 +446,6 @@ class _DashboardState extends State<Dashboard> {
           ],
         );
       },
-    );
-  }
-
-  Widget _statChip(String count, String label, Color color, {String? value}) {
-    final filterValue = value ?? label;
-    final selected = _selectedStatus == filterValue;
-    return Padding(
-      padding: const EdgeInsets.only(right: AppSpacing.xs),
-      child: GestureDetector(
-        onTap: () =>
-            setState(() => _selectedStatus = selected ? null : filterValue),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          width: 100,
-          decoration: BoxDecoration(
-            color: selected
-                ? color.withValues(alpha: 0.15)
-                : Colorpalatte.containercolor,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: selected ? Border.all(color: color, width: 2) : null,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                count,
-                style: TextStyle(
-                  fontSize: AppFontSize.title,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                ),
-              ),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: AppFontSize.caption),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -553,11 +469,17 @@ class _PinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Material(color: Colorpalatte.maincolor, child: child);
+    return Material(
+      color: Colorpalatte.maincolor,
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: child,
+      ),
+    );
   }
 
   @override
   bool shouldRebuild(covariant _PinnedHeaderDelegate oldDelegate) {
-    return true;
+    return height != oldDelegate.height || child != oldDelegate.child;
   }
 }

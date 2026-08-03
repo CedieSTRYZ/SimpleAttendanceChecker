@@ -18,11 +18,11 @@ class ScannedQrSheet {
           builder: (context, setState) {
             bool isSaving = false;
 
-            return SizedBox(
-              height: 500,
-              child: Padding(
-                padding: const EdgeInsets.all(30),
+            return Padding(
+              padding: const EdgeInsets.all(30),
+              child: SingleChildScrollView(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   spacing: AppSpacing.xm,
                   children: [
                     Center(
@@ -145,12 +145,12 @@ class ScannedQrSheet {
                         ],
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(height: AppSpacing.xm),
                     Row(
                       spacing: AppSpacing.xm,
                       children: [
                         Expanded(
-                          flex: 1,
+                          flex: 2,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colorpalatte.mutedcolor,
@@ -167,14 +167,15 @@ class ScannedQrSheet {
                               'Cancel',
                               style: TextStyle(
                                 color: Colorpalatte.maincolor,
-                                fontSize: AppFontSize.subtitle,
-                                fontWeight: FontWeight.w400,
+                                fontSize: AppFontSize.caption,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
                         ),
+
                         Expanded(
-                          flex: 2,
+                          flex: 3,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colorpalatte.secondary,
@@ -209,8 +210,8 @@ class ScannedQrSheet {
                                     'Scan new student',
                                     style: TextStyle(
                                       color: Colorpalatte.maincolor,
-                                      fontSize: AppFontSize.subtitle,
-                                      fontWeight: FontWeight.w400,
+                                      fontSize: AppFontSize.caption,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                           ),

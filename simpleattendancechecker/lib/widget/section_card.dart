@@ -21,7 +21,7 @@ class SectionCard extends StatelessWidget {
       child: ChoiceChip(
         label: Text(label),
         selected: selected,
-        onSelected: (_) => onTap,
+        onSelected: (_) => onTap(),
         selectedColor: Colorpalatte.secondary,
         backgroundColor: Colorpalatte.containercolor,
         labelStyle: TextStyle(

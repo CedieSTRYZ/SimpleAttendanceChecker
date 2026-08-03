@@ -37,8 +37,6 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       Scanner(isActive: _selectedIndex == 0),
-      Dashboard(selectedDate: _selectedDate, onDateChanged: (DateTime value) {  },),
-      SummaryReports(),
       Dashboard(
         selectedDate: _selectedDate,
         onDateChanged: (date) => setState(() => _selectedDate = date),

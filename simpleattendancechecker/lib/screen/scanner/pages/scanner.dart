@@ -167,7 +167,7 @@ class _ScannerState extends State<Scanner> {
                 'Not Confirmed',
                 'The "Late" mark was cancelled because biometric verification failed.',
               );
-              return; // nothing gets written to Firestore
+              return;
             }
           }
 
@@ -189,6 +189,13 @@ class _ScannerState extends State<Scanner> {
               });
         },
       );
+
+      if (mounted) {
+        try {
+          await controller.stop();
+          await controller.start();
+        } catch (_) {}
+      }
     } catch (e) {
       if (!mounted) return;
       await _showInfoDialog(
@@ -197,9 +204,9 @@ class _ScannerState extends State<Scanner> {
       );
     } finally {
       _isProcessing = false;
-      if (mounted) {
-        _manualIdFocusNode.requestFocus();
-      }
+      // if (mounted) {
+      //   _manualIdFocusNode.requestFocus();
+      // }
     }
   }
 
@@ -380,7 +387,7 @@ class _ScannerState extends State<Scanner> {
 
   Future<void> _showInfoDialog(String title, String message) {
     return showDialog(
-      context: context,   
+      context: context,
       builder: (context) => AlertDialog(
         title: Text(title, style: const TextStyle(fontFamily: 'K2D')),
         content: Text(message),

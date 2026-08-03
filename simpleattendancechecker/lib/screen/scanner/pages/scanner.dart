@@ -380,7 +380,7 @@ class _ScannerState extends State<Scanner> {
 
   Future<void> _showInfoDialog(String title, String message) {
     return showDialog(
-      context: context,
+      context: context,   
       builder: (context) => AlertDialog(
         title: Text(title, style: const TextStyle(fontFamily: 'K2D')),
         content: Text(message),

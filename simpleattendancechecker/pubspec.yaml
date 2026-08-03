@@ -42,6 +42,7 @@ flutter:
 
   assets:
     - lib/assets/
+    - lib/assets/png/
     - lib/assets/svg/
     - lib/assets/fonts/
     - lib/assets/fonts/Poppins/

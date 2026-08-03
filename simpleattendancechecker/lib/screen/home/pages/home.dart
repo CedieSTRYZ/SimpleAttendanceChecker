@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
 import 'package:simpleattendancechecker/screen/dashboard/pages/dashboard.dart';
-import 'package:simpleattendancechecker/screen/recordlist/pages/record_list.dart';
 import 'package:simpleattendancechecker/screen/scanner/pages/scanner.dart';
+import 'package:simpleattendancechecker/screen/summaryreport/pages/summary_reports.dart';
 import 'package:simpleattendancechecker/widget/custom_appbar.dart';
 
 class Home extends StatefulWidget {
@@ -16,6 +16,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  // ── 🛠️ Method functions ───────────────────────────
   int _selectedIndex = 1;
   DateTime _selectedDate = DateTime.now();
 
@@ -36,13 +37,16 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       Scanner(isActive: _selectedIndex == 0),
+      Dashboard(selectedDate: _selectedDate, onDateChanged: (DateTime value) {  },),
+      SummaryReports(),
       Dashboard(
         selectedDate: _selectedDate,
         onDateChanged: (date) => setState(() => _selectedDate = date),
       ),
-      const RecordList(),
+      SummaryReports(),
     ];
 
+    // ── 🏗️ Main structure ───────────────────────────
     return Scaffold(
       backgroundColor: Colorpalatte.maincolor,
       appBar: const CustomAppbar(),

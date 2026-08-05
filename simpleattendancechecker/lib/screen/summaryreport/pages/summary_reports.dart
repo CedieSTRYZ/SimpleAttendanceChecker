@@ -24,10 +24,10 @@ class _SummaryReportsState extends State<SummaryReports> {
   // Detail record list
   final List<Map<String, dynamic>> attendanceRecords = [
     {
-      'studentId': '06-2423-032994',
+      'studentId': '06-2423-022994',
       'fullName': 'Lorenzana, Ahllana Mae G.',
       'time': '10:00 AM',
-      'status': 'Present',
+      'status': 'Preeeesent',
     },
     {
       'studentId': '06-2423-032994',

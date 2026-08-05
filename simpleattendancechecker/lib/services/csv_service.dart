@@ -26,11 +26,11 @@ class ImportResult {
       ImportResult._(success: true, cancelledByUser: false, count: count);
 
   factory ImportResult.error(String message) => ImportResult._(
-        success: false,
-        cancelledByUser: false,
-        count: 0,
-        errorMessage: message,
-      );
+    success: false,
+    cancelledByUser: false,
+    count: 0,
+    errorMessage: message,
+  );
 
   factory ImportResult.cancelled() =>
       ImportResult._(success: false, cancelledByUser: true, count: 0);
@@ -82,8 +82,10 @@ class CsvService {
       if (excel.tables.isEmpty) return [];
       final sheet = excel.tables[excel.tables.keys.first]!;
       return sheet.rows
-          .map((row) =>
-              row.map((cell) => _excelCellToString(cell?.value)).toList())
+          .map(
+            (row) =>
+                row.map((cell) => _excelCellToString(cell?.value)).toList(),
+          )
           .toList();
     }
 
@@ -99,8 +101,9 @@ class CsvService {
   ) async {
     if (format == ExportFormat.excel) {
       final excel = xl.Excel.createExcel();
-      final sheetName =
-          excel.tables.keys.isNotEmpty ? excel.tables.keys.first : 'Sheet1';
+      final sheetName = excel.tables.keys.isNotEmpty
+          ? excel.tables.keys.first
+          : 'Sheet1';
       final sheet = excel[sheetName];
       for (final row in rows) {
         sheet.appendRow(row.map((s) => xl.TextCellValue(s)).toList());
@@ -157,8 +160,9 @@ class CsvService {
         final studentId = _cell(row, idCol);
         if (studentId.isEmpty) continue;
 
-        final ref =
-            FirebaseFirestore.instance.collection('students').doc(studentId);
+        final ref = FirebaseFirestore.instance
+            .collection('students')
+            .doc(studentId);
         final studentType = _cell(row, typeCol);
 
         batch.set(ref, {
@@ -187,11 +191,13 @@ class CsvService {
   }
 
   // ── 📤 Export Student Data ─────────────────────────────────────────
-  static Future<ImportResult> exportStudents(
-      {required ExportFormat format}) async {
+  static Future<ImportResult> exportStudents({
+    required ExportFormat format,
+  }) async {
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('students').get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .get();
 
       final rows = <List<String>>[
         [
@@ -264,23 +270,24 @@ class CsvService {
         final date = _cell(row, dateCol);
         if (studentId.isEmpty || date.isEmpty) continue;
 
-        final time =
-            _cell(row, timeCol).isEmpty ? '00:00' : _cell(row, timeCol);
-        final status =
-            _cell(row, statusCol).isEmpty ? 'Present' : _cell(row, statusCol);
+        final time = _cell(row, timeCol).isEmpty
+            ? '00:00'
+            : _cell(row, timeCol);
+        final status = _cell(row, statusCol).isEmpty
+            ? 'Present'
+            : _cell(row, statusCol);
 
         DateTime parsedTimestamp;
         try {
-          parsedTimestamp =
-              DateFormat('yyyy-MM-dd HH:mm').parse('$date $time');
+          parsedTimestamp = DateFormat('yyyy-MM-dd HH:mm').parse('$date $time');
         } catch (_) {
           parsedTimestamp = DateTime.tryParse(date) ?? DateTime.now();
         }
 
-        final docId =
-            '${studentId}_import_${date}_${time.replaceAll(':', '')}';
-        final ref =
-            FirebaseFirestore.instance.collection('attendance').doc(docId);
+        final docId = '${studentId}_import_${date}_${time.replaceAll(':', '')}';
+        final ref = FirebaseFirestore.instance
+            .collection('attendance')
+            .doc(docId);
 
         batch.set(ref, {
           'studentId': studentId,
@@ -311,8 +318,9 @@ class CsvService {
   }
 
   // ── 📤 Export Attendance Log ───────────────────────────────────────
-  static Future<ImportResult> exportAttendance(
-      {required ExportFormat format}) async {
+  static Future<ImportResult> exportAttendance({
+    required ExportFormat format,
+  }) async {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('attendance')
@@ -350,6 +358,80 @@ class CsvService {
       final savedPath = await _saveRows(rows, baseFileName, format);
       if (savedPath == null) return ImportResult.cancelled();
       return ImportResult.success(snapshot.docs.length);
+    } catch (e) {
+      return ImportResult.error('Export failed: $e');
+    }
+  }
+
+  // ── 📤 Export Section Masterlist (with present/absent totals) ─────
+  static Future<ImportResult> exportSectionMasterlist({
+    required List<QueryDocumentSnapshot<Map<String, dynamic>>> students,
+    required String sectionLabel,
+    required ExportFormat format,
+  }) async {
+    try {
+      final studentIds = students.map((doc) => doc.id).toList();
+
+      // ── I-tally ang Present/Late (parehong bibilangin bilang Present)
+      // at Absent kada estudyante, gamit ang chunked whereIn queries ──
+      final presentTally = <String, int>{};
+      final absentTally = <String, int>{};
+
+      for (var i = 0; i < studentIds.length; i += 30) {
+        final chunk = studentIds.sublist(
+          i,
+          i + 30 > studentIds.length ? studentIds.length : i + 30,
+        );
+        final snap = await FirebaseFirestore.instance
+            .collection('attendance')
+            .where('studentId', whereIn: chunk)
+            .get();
+
+        for (final doc in snap.docs) {
+          final d = doc.data();
+          final id = (d['studentId'] ?? '').toString();
+          final status = (d['attendanceStatus'] ?? '').toString();
+          if (status == 'Present' || status == 'Late') {
+            presentTally[id] = (presentTally[id] ?? 0) + 1;
+          } else if (status == 'Absent') {
+            absentTally[id] = (absentTally[id] ?? 0) + 1;
+          }
+        }
+      }
+
+      final rows = <List<String>>[
+        [
+          'Student ID',
+          'Full Name',
+          'Email',
+          'Program',
+          'Year',
+          'Section',
+          'Total Present',
+          'Total Absent',
+        ],
+      ];
+
+      for (final doc in students) {
+        final d = doc.data();
+        rows.add([
+          doc.id,
+          (d['fullName'] ?? '').toString(),
+          (d['email'] ?? '').toString(),
+          (d['program'] ?? '').toString(),
+          (d['year'] ?? '').toString(),
+          (d['section'] ?? '').toString(),
+          '${presentTally[doc.id] ?? 0}',
+          '${absentTally[doc.id] ?? 0}',
+        ]);
+      }
+
+      final safeLabel = sectionLabel.replaceAll(RegExp(r'[^\w\-]+'), '_');
+      final baseFileName =
+          'masterlist_${safeLabel}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}';
+      final savedPath = await _saveRows(rows, baseFileName, format);
+      if (savedPath == null) return ImportResult.cancelled();
+      return ImportResult.success(students.length);
     } catch (e) {
       return ImportResult.error('Export failed: $e');
     }

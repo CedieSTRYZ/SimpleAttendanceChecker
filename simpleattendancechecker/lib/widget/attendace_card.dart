@@ -7,6 +7,7 @@ class AttendaceCard extends StatelessWidget {
   final String studentId;
   final String time;
   final String status;
+  final String? date;
 
   const AttendaceCard({
     super.key,
@@ -14,6 +15,7 @@ class AttendaceCard extends StatelessWidget {
     required this.studentId,
     required this.time,
     required this.status,
+    this.date,
   });
 
   Color get _statusColor {
@@ -96,7 +98,7 @@ class AttendaceCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                time,
+                date != null ? '$date  •  $time' : time,
                 style: TextStyle(fontFamily: 'K2D', fontSize: AppFontSize.body),
               ),
               Text(

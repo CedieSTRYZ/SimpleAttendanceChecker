@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
 import 'package:simpleattendancechecker/screen/dashboard/pages/dashboard.dart';
+import 'package:simpleattendancechecker/screen/recordlist/pages/record_list.dart';
 import 'package:simpleattendancechecker/screen/scanner/pages/scanner.dart';
-import 'package:simpleattendancechecker/screen/summaryreport/pages/summary_reports.dart';
 import 'package:simpleattendancechecker/widget/custom_appbar.dart';
 
 class Home extends StatefulWidget {
@@ -41,7 +41,7 @@ class _HomeState extends State<Home> {
         selectedDate: _selectedDate,
         onDateChanged: (date) => setState(() => _selectedDate = date),
       ),
-      SummaryReports(),
+      RecordList(),
     ];
 
     // ── 🏗️ Main structure ───────────────────────────

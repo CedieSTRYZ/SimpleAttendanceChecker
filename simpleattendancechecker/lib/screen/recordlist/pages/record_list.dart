@@ -4,9 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:simpleattendancechecker/constants/app_sizing.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
 import 'package:simpleattendancechecker/screen/recordlist/pages/section_student_list.dart';
-import 'package:simpleattendancechecker/screen/recordlist/pages/student_attendance_log.dart';
 
-enum _RecordView { masterlist, studentList, studentLog }
+enum _RecordView { masterlist, studentList }
 
 class _SectionGroup {
   final String program;
@@ -41,8 +40,6 @@ class _RecordListState extends State<RecordList> {
   String? _selectedSection;
 
   _SectionGroup? _activeGroup;
-  String? _activeStudentId;
-  String? _activeStudentName;
 
   String _yearDigits(String year) =>
       RegExp(r'^\d+').firstMatch(year)?.group(0) ?? '';
@@ -54,26 +51,10 @@ class _RecordListState extends State<RecordList> {
     });
   }
 
-  void _openStudent(String studentId, String fullName) {
-    setState(() {
-      _activeStudentId = studentId;
-      _activeStudentName = fullName;
-      _view = _RecordView.studentLog;
-    });
-  }
-
   void _backToMasterlist() {
     setState(() {
       _view = _RecordView.masterlist;
       _activeGroup = null;
-    });
-  }
-
-  void _backToStudentList() {
-    setState(() {
-      _view = _RecordView.studentList;
-      _activeStudentId = null;
-      _activeStudentName = null;
     });
   }
 
@@ -107,17 +88,20 @@ class _RecordListState extends State<RecordList> {
               ),
               ListTile(
                 title: const Text('All'),
-                trailing:
-                    current == null ? Icon(Icons.check, color: Colorpalatte.secondary) : null,
+                trailing: current == null
+                    ? Icon(Icons.check, color: Colorpalatte.secondary)
+                    : null,
                 onTap: () => Navigator.pop(context, null),
               ),
-              ...options.map((o) => ListTile(
-                    title: Text(o),
-                    trailing: current == o
-                        ? Icon(Icons.check, color: Colorpalatte.secondary)
-                        : null,
-                    onTap: () => Navigator.pop(context, o),
-                  )),
+              ...options.map(
+                (o) => ListTile(
+                  title: Text(o),
+                  trailing: current == o
+                      ? Icon(Icons.check, color: Colorpalatte.secondary)
+                      : null,
+                  onTap: () => Navigator.pop(context, o),
+                ),
+              ),
               const SizedBox(height: AppSpacing.sm),
             ],
           ),
@@ -155,7 +139,8 @@ class _RecordListState extends State<RecordList> {
           final rawYear = (d['year'] ?? '').toString().trim();
           final yearDigits = _yearDigits(rawYear);
           final section = (d['section'] ?? '').toString().trim();
-          if (program.isEmpty || yearDigits.isEmpty || section.isEmpty) continue;
+          if (program.isEmpty || yearDigits.isEmpty || section.isEmpty)
+            continue;
 
           programs.add(program);
           years.add(yearDigits);
@@ -206,11 +191,13 @@ class _RecordListState extends State<RecordList> {
         switch (_view) {
           case _RecordView.studentList:
             if (_activeGroup == null) {
-              WidgetsBinding.instance.addPostFrameCallback((_) => _backToMasterlist());
+              WidgetsBinding.instance.addPostFrameCallback(
+                (_) => _backToMasterlist(),
+              );
               return const SizedBox.shrink();
             }
-            final refreshedGroup = groupMap[
-                    '${_activeGroup!.program}|${_activeGroup!.year}|${_activeGroup!.section}'] ??
+            final refreshedGroup =
+                groupMap['${_activeGroup!.program}|${_activeGroup!.year}|${_activeGroup!.section}'] ??
                 _activeGroup!;
             return Padding(
               padding: const EdgeInsets.only(top: AppSpacing.md),
@@ -218,24 +205,10 @@ class _RecordListState extends State<RecordList> {
                 program: refreshedGroup.program,
                 year: refreshedGroup.year,
                 section: refreshedGroup.section,
-                sectionLabel: '${refreshedGroup.program} ${refreshedGroup.label}',
+                sectionLabel:
+                    '${refreshedGroup.program} ${refreshedGroup.label}',
                 students: refreshedGroup.students,
                 onBack: _backToMasterlist,
-                onSelectStudent: _openStudent,
-              ),
-            );
-
-          case _RecordView.studentLog:
-            if (_activeStudentId == null) {
-              WidgetsBinding.instance.addPostFrameCallback((_) => _backToMasterlist());
-              return const SizedBox.shrink();
-            }
-            return Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.md),
-              child: StudentAttendanceLog(
-                studentId: _activeStudentId!,
-                fullName: _activeStudentName ?? '',
-                onBack: _backToStudentList,
               ),
             );
 
@@ -255,7 +228,9 @@ class _RecordListState extends State<RecordList> {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xm),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xm,
+                    ),
                     width: double.infinity,
                     height: 40,
                     decoration: BoxDecoration(
@@ -267,11 +242,16 @@ class _RecordListState extends State<RecordList> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.calendar_today_rounded,
-                                size: 16, color: Colorpalatte.maincolor),
+                            Icon(
+                              Icons.calendar_today_rounded,
+                              size: 16,
+                              color: Colorpalatte.maincolor,
+                            ),
                             const SizedBox(width: AppSpacing.xs),
                             Text(
-                              DateFormat('MMMM dd, yyyy').format(DateTime.now()),
+                              DateFormat(
+                                'MMMM dd, yyyy',
+                              ).format(DateTime.now()),
                               style: TextStyle(
                                 color: Colorpalatte.maincolor,
                                 fontFamily: 'K2D',
@@ -299,7 +279,8 @@ class _RecordListState extends State<RecordList> {
                       children: [
                         _filterChip(
                           label: 'All',
-                          selected: _selectedProgram == null &&
+                          selected:
+                              _selectedProgram == null &&
                               _selectedYear == null &&
                               _selectedSection == null,
                           onTap: () => setState(() {
@@ -319,8 +300,9 @@ class _RecordListState extends State<RecordList> {
                           ),
                         ),
                         _dropdownChip(
-                          label:
-                              _selectedSection != null ? 'Section $_selectedSection' : 'Section',
+                          label: _selectedSection != null
+                              ? 'Section $_selectedSection'
+                              : 'Section',
                           active: _selectedSection != null,
                           onTap: () => _showFilterPicker(
                             'Select Section',
@@ -330,7 +312,9 @@ class _RecordListState extends State<RecordList> {
                           ),
                         ),
                         _dropdownChip(
-                          label: _selectedYear != null ? 'Year $_selectedYear' : 'Year',
+                          label: _selectedYear != null
+                              ? 'Year $_selectedYear'
+                              : 'Year',
                           active: _selectedYear != null,
                           onTap: () => _showFilterPicker(
                             'Select Year',
@@ -344,76 +328,82 @@ class _RecordListState extends State<RecordList> {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Expanded(
-                    child: snapshot.connectionState == ConnectionState.waiting &&
+                    child:
+                        snapshot.connectionState == ConnectionState.waiting &&
                             allStudents.isEmpty
                         ? const Center(child: CircularProgressIndicator())
                         : groups.isEmpty
-                            ? Center(
-                                child: Text(
-                                  'No sections found.',
-                                  style: TextStyle(color: Colorpalatte.mutedcolor),
+                        ? Center(
+                            child: Text(
+                              'No sections found.',
+                              style: TextStyle(color: Colorpalatte.mutedcolor),
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount: groups.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(height: AppSpacing.xs),
+                            itemBuilder: (context, index) {
+                              final g = groups[index];
+                              return InkWell(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.md,
                                 ),
-                              )
-                            : ListView.separated(
-                                itemCount: groups.length,
-                                separatorBuilder: (_, _) =>
-                                    const SizedBox(height: AppSpacing.xs),
-                                itemBuilder: (context, index) {
-                                  final g = groups[index];
-                                  return InkWell(
-                                    borderRadius: BorderRadius.circular(AppRadius.md),
-                                    onTap: () => _openSection(g),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(AppSpacing.md),
-                                      decoration: BoxDecoration(
-                                        color: Colorpalatte.containercolor,
-                                        borderRadius: BorderRadius.circular(AppRadius.md),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: AppSpacing.sm,
-                                              vertical: AppSpacing.xs,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colorpalatte.secondary,
-                                              borderRadius:
-                                                  BorderRadius.circular(AppRadius.sm),
-                                            ),
-                                            child: Text(
-                                              g.label,
-                                              style: TextStyle(
-                                                fontFamily: 'K2D',
-                                                fontWeight: FontWeight.w700,
-                                                color: Colorpalatte.maincolor,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: AppSpacing.sm),
-                                          Expanded(
-                                            child: Text(
-                                              g.program,
-                                              style: TextStyle(
-                                                fontFamily: 'K2D',
-                                                fontWeight: FontWeight.w700,
-                                                fontSize: AppFontSize.body,
-                                              ),
-                                            ),
-                                          ),
-                                          Text(
-                                            '${g.count} Students',
-                                            style: TextStyle(
-                                              fontSize: AppFontSize.caption,
-                                              color: Colorpalatte.mutedcolor,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                onTap: () => _openSection(g),
+                                child: Container(
+                                  padding: const EdgeInsets.all(AppSpacing.md),
+                                  decoration: BoxDecoration(
+                                    color: Colorpalatte.containercolor,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.md,
                                     ),
-                                  );
-                                },
-                              ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: AppSpacing.sm,
+                                          vertical: AppSpacing.xs,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colorpalatte.secondary,
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.sm,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          g.label,
+                                          style: TextStyle(
+                                            fontFamily: 'K2D',
+                                            fontWeight: FontWeight.w700,
+                                            color: Colorpalatte.maincolor,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: AppSpacing.sm),
+                                      Expanded(
+                                        child: Text(
+                                          g.program,
+                                          style: TextStyle(
+                                            fontFamily: 'K2D',
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: AppFontSize.body,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        '${g.count} Students',
+                                        style: TextStyle(
+                                          fontSize: AppFontSize.caption,
+                                          color: Colorpalatte.mutedcolor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
@@ -465,8 +455,9 @@ class _RecordListState extends State<RecordList> {
           ],
         ),
         onPressed: onTap,
-        backgroundColor:
-            active ? Colorpalatte.secondary.withOpacity(0.15) : Colorpalatte.containercolor,
+        backgroundColor: active
+            ? Colorpalatte.secondary.withOpacity(0.15)
+            : Colorpalatte.containercolor,
         labelStyle: TextStyle(
           color: active ? Colorpalatte.secondary : Colorpalatte.mutedcolor,
           fontWeight: FontWeight.w700,

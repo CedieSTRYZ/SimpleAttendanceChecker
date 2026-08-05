@@ -13,7 +13,6 @@ class SectionStudentList extends StatefulWidget {
   final String sectionLabel;
   final List<QueryDocumentSnapshot<Map<String, dynamic>>> students;
   final VoidCallback onBack;
-  final void Function(String studentId, String fullName) onSelectStudent;
 
   const SectionStudentList({
     super.key,
@@ -23,7 +22,6 @@ class SectionStudentList extends StatefulWidget {
     required this.sectionLabel,
     required this.students,
     required this.onBack,
-    required this.onSelectStudent,
   });
 
   @override
@@ -270,75 +268,37 @@ class _SectionStudentListState extends State<SectionStudentList> {
                     final studentId = doc.id;
                     final fullName = (d['fullName'] ?? '').toString();
 
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colorpalatte.containercolor,
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      onTap: () => StudentAnalyticsSheet.show(
+                        context,
+                        studentId: studentId,
+                        fullName: fullName,
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                              onTap: () =>
-                                  widget.onSelectStudent(studentId, fullName),
-                              child: Padding(
-                                padding: const EdgeInsets.all(AppSpacing.md),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      studentId,
-                                      style: TextStyle(
-                                        fontFamily: 'K2D',
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: AppFontSize.body,
-                                      ),
-                                    ),
-                                    Text(
-                                      fullName,
-                                      style: TextStyle(
-                                        fontFamily: 'K2D',
-                                        fontSize: AppFontSize.caption,
-                                        color: Colorpalatte.mutedcolor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          InkWell(
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                            onTap: () => StudentAnalyticsSheet.show(
-                              context,
-                              studentId: studentId,
-                              fullName: fullName,
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Container(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: Colorpalatte.containercolor,
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
                               child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(
-                                      AppSpacing.xs,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colorpalatte.warningcolor,
-                                      borderRadius: BorderRadius.circular(
-                                        AppRadius.sm,
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      Icons.bar_chart_rounded,
-                                      color: Colorpalatte.maincolor,
-                                      size: 20,
+                                  Text(
+                                    studentId,
+                                    style: TextStyle(
+                                      fontFamily: 'K2D',
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: AppFontSize.body,
                                     ),
                                   ),
-                                  const SizedBox(height: 2),
                                   Text(
-                                    'Analytics',
+                                    fullName,
                                     style: TextStyle(
+                                      fontFamily: 'K2D',
                                       fontSize: AppFontSize.caption,
                                       color: Colorpalatte.mutedcolor,
                                     ),
@@ -346,8 +306,12 @@ class _SectionStudentListState extends State<SectionStudentList> {
                                 ],
                               ),
                             ),
-                          ),
-                        ],
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: Colorpalatte.mutedcolor,
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },

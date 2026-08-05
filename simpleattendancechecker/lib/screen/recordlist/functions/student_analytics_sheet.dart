@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:simpleattendancechecker/constants/app_sizing.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
+import 'package:simpleattendancechecker/widget/attendace_card.dart';
 import 'package:simpleattendancechecker/widget/circular_stat_ring.dart';
 
 class StudentAnalyticsSheet {
@@ -20,7 +22,7 @@ class StudentAnalyticsSheet {
       builder: (context) {
         return DraggableScrollableSheet(
           expand: false,
-          initialChildSize: 0.75,
+          initialChildSize: 0.85,
           minChildSize: 0.5,
           maxChildSize: 0.95,
           builder: (context, scrollController) {
@@ -28,6 +30,7 @@ class StudentAnalyticsSheet {
               stream: FirebaseFirestore.instance
                   .collection('attendance')
                   .where('studentId', isEqualTo: studentId)
+                  .orderBy('timestamp', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
                 final docs = snapshot.data?.docs ?? [];
@@ -84,12 +87,13 @@ class StudentAnalyticsSheet {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
+
                     if (snapshot.connectionState == ConnectionState.waiting)
                       const Padding(
                         padding: EdgeInsets.all(AppSpacing.lg),
                         child: Center(child: CircularProgressIndicator()),
                       )
-                    else if (total == 0)
+                    else if (docs.isEmpty)
                       Padding(
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         child: Center(
@@ -100,83 +104,120 @@ class StudentAnalyticsSheet {
                         ),
                       )
                     else ...[
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        decoration: BoxDecoration(
-                          color: Colorpalatte.secondary,
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                      // ── 📊 Analytics — base sa Present/Late/Absent lang ────
+                      if (total > 0) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: Colorpalatte.secondary,
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${overallPercent.round()}%',
+                                      style: TextStyle(
+                                        fontFamily: 'K2D',
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colorpalatte.maincolor,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Overall Attendance',
+                                      style: TextStyle(
+                                        fontFamily: 'K2D',
+                                        fontWeight: FontWeight.w700,
+                                        color: Colorpalatte.maincolor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      overallLabel,
+                                      style: TextStyle(
+                                        fontSize: AppFontSize.caption,
+                                        color: Colorpalatte.maincolor.withOpacity(0.8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              CircularStatRing(
+                                percent: overallPercent,
+                                color: Colorpalatte.accentcolor,
+                                size: 72,
+                                strokeWidth: 7,
+                                textStyle: TextStyle(
+                                  fontFamily: 'K2D',
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  color: Colorpalatte.maincolor,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${overallPercent.round()}%',
-                                    style: TextStyle(
-                                      fontFamily: 'K2D',
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colorpalatte.maincolor,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Overall Attendance',
-                                    style: TextStyle(
-                                      fontFamily: 'K2D',
-                                      fontWeight: FontWeight.w700,
-                                      color: Colorpalatte.maincolor,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    overallLabel,
-                                    style: TextStyle(
-                                      fontSize: AppFontSize.caption,
-                                      color: Colorpalatte.maincolor.withOpacity(0.8),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            CircularStatRing(
-                              percent: overallPercent,
-                              color: Colorpalatte.accentcolor,
-                              size: 72,
-                              strokeWidth: 7,
-                              textStyle: TextStyle(
-                                fontFamily: 'K2D',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                                color: Colorpalatte.maincolor,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: AppSpacing.sm),
+                        _statRow(
+                          'Present',
+                          'Attended $present time(s) of all recorded classes.',
+                          presentPercent,
+                          Colorpalatte.sucesscolor,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        _statRow(
+                          'Late',
+                          'Arrived late $late time(s) of recorded attendance.',
+                          latePercent,
+                          Colorpalatte.warningcolor,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        _statRow(
+                          'Absent',
+                          'Missed $absent time(s) of scheduled classes.',
+                          absentPercent,
+                          Colorpalatte.errorcolor,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
+
+                      // ── 📋 Attendance log — LAHAT ng status (Present,
+                      // Late, Absent, OJT, Working Student) ────────────
+                      Text(
+                        'Attendance Log',
+                        style: TextStyle(
+                          fontFamily: 'K2D',
+                          fontSize: AppFontSize.title,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      _statRow(
-                        'Present',
-                        'Attended $present time(s) of all recorded classes.',
-                        presentPercent,
-                        Colorpalatte.sucesscolor,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      _statRow(
-                        'Late',
-                        'Arrived late $late time(s) of recorded attendance.',
-                        latePercent,
-                        Colorpalatte.warningcolor,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      _statRow(
-                        'Absent',
-                        'Missed $absent time(s) of scheduled classes.',
-                        absentPercent,
-                        Colorpalatte.errorcolor,
-                      ),
+                      ...docs.map((doc) {
+                        final d = doc.data();
+                        final rawDate = (d['date'] ?? '').toString();
+                        var displayDate = rawDate;
+                        try {
+                          displayDate = DateFormat('MMM dd, yyyy')
+                              .format(DateTime.parse(rawDate));
+                        } catch (_) {
+                          // panatilihin ang raw string kung hindi ma-parse
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                          child: AttendaceCard(
+                            fullName: d['fullName'] ?? '',
+                            studentId: d['studentId'] ?? '',
+                            time: d['time'] ?? '',
+                            status: d['attendanceStatus'] ?? '',
+                            date: displayDate,
+                          ),
+                        );
+                      }),
                     ],
                   ],
                 );

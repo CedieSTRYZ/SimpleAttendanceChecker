@@ -28,9 +28,6 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   // ── 🛠️ State variables ───────────────────────────
-  final GlobalKey _headerContentKey = GlobalKey();
-  double _headerHeight = 278;
-
   String _searchQuery = '';
   String _selectedSection = 'All';
   String? _selectedStatus;
@@ -79,18 +76,6 @@ class _DashboardState extends State<Dashboard> {
   // ── Helper widgets ───────────────────────────
   void _toggleStatus(String value) {
     setState(() => _selectedStatus = _selectedStatus == value ? null : value);
-  }
-
-  void _measureHeaderHeight() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final ctx = _headerContentKey.currentContext;
-      if (ctx == null) return;
-      final box = ctx.findRenderObject() as RenderBox;
-      final newHeight = box.size.height;
-      if (newHeight != _headerHeight && mounted) {
-        setState(() => _headerHeight = newHeight);
-      }
-    });
   }
 
   // ── 🎴 UI Build ───────────────────────────
@@ -205,16 +190,14 @@ class _DashboardState extends State<Dashboard> {
         final sectionList = sections.toList();
 
         // ── 🎨 UI Structures ───────────────────────────
-        _measureHeaderHeight();
+
         return CustomScrollView(
           slivers: [
             // ── 📌 Sticky header ───────────────────────────
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _PinnedHeaderDelegate(
-                height: _headerHeight,
+            PinnedHeaderSliver(
+              child: Material(
+                color: Colorpalatte.maincolor,
                 child: Padding(
-                  key: _headerContentKey,
                   padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
 
                   child: Column(
@@ -446,39 +429,5 @@ class _DashboardState extends State<Dashboard> {
         );
       },
     );
-  }
-}
-
-// ── 📌 Delegate para sa sticky/pinned header ───────────────────────────
-class _PinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final double height;
-  final Widget child;
-
-  _PinnedHeaderDelegate({required this.height, required this.child});
-
-  @override
-  double get minExtent => height;
-
-  @override
-  double get maxExtent => height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Material(
-      color: Colorpalatte.maincolor,
-      child: SingleChildScrollView(
-        physics: const NeverScrollableScrollPhysics(),
-        child: child,
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant _PinnedHeaderDelegate oldDelegate) {
-    return height != oldDelegate.height || child != oldDelegate.child;
   }
 }

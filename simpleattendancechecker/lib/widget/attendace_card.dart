@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:simpleattendancechecker/constants/app_sizing.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
+import 'package:simpleattendancechecker/constants/shadow_card.dart';
 
 class AttendaceCard extends StatelessWidget {
   final String fullName;
@@ -8,6 +9,7 @@ class AttendaceCard extends StatelessWidget {
   final String time;
   final String status;
   final String? date;
+  final bool selfScanned;
 
   const AttendaceCard({
     super.key,
@@ -16,6 +18,7 @@ class AttendaceCard extends StatelessWidget {
     required this.time,
     required this.status,
     this.date,
+    this.selfScanned = false,
   });
 
   Color get _statusColor {
@@ -35,6 +38,11 @@ class AttendaceCard extends StatelessWidget {
     }
   }
 
+  bool get _attendanceWhileOjtWorking {
+    final isOjtorWorking = status == 'Ojt' || status == 'Working Student';
+    return isOjtorWorking && selfScanned;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -42,33 +50,14 @@ class AttendaceCard extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colorpalatte.containercolor,
-        boxShadow: [
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.12),
-            blurRadius: 3,
-            spreadRadius: 0,
-            offset: Offset(0, 1),
-          ),
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.24),
-            blurRadius: 2,
-            spreadRadius: 0,
-            offset: Offset(0, 1),
-          ),
-        ],
+        boxShadow: ShadowCard.card,
+
         borderRadius: BorderRadius.circular(AppRadius.xm),
       ),
       child: Row(
         spacing: AppSpacing.xm,
         children: [
-          Container(
-            width: 18,
-            height: 18,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _statusColor,
-            ),
-          ),
+          _buildStatusDot(),
 
           Expanded(
             child: Column(
@@ -114,6 +103,39 @@ class AttendaceCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatusDot() {
+    if (_attendanceWhileOjtWorking) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colorpalatte.sucesscolor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _statusColor,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Container(
+      width: 18,
+      height: 18,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: _statusColor),
     );
   }
 }

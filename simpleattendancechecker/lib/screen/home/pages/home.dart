@@ -28,20 +28,19 @@ class _HomeState extends State<Home> {
           .collection('attendance')
           .where('date', isEqualTo: dateStr)
           .get(const GetOptions(source: Source.server));
-    } catch (_) {
-      // falls back to cached/local data if this fails (offline)
-    }
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
+    //
     final List<Widget> pages = [
       Scanner(isActive: _selectedIndex == 0),
       Dashboard(
         selectedDate: _selectedDate,
         onDateChanged: (date) => setState(() => _selectedDate = date),
       ),
-      RecordList(),
+      RecordList(isActive: _selectedIndex == 2),
     ];
 
     // ── 🏗️ Main structure ───────────────────────────

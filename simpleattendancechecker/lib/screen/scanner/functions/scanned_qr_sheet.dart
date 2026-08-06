@@ -14,12 +14,13 @@ class ScannedQrSheet {
       enableDrag: false,
       backgroundColor: Colorpalatte.maincolor,
       builder: (BuildContext context) {
+        bool isSaving = false;
+
         return StatefulBuilder(
           builder: (context, setState) {
-            bool isSaving = false;
-
             return Padding(
               padding: const EdgeInsets.all(30),
+              
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -36,6 +37,7 @@ class ScannedQrSheet {
                         ),
                       ),
                     ),
+
                     Center(
                       child: Text(
                         'Confirm attendance details below.',
@@ -45,6 +47,7 @@ class ScannedQrSheet {
                         ),
                       ),
                     ),
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -66,6 +69,7 @@ class ScannedQrSheet {
                         ),
                       ],
                     ),
+
                     Container(
                       padding: EdgeInsets.all(AppSpacing.md),
                       width: double.infinity,
@@ -107,6 +111,7 @@ class ScannedQrSheet {
                         ],
                       ),
                     ),
+
                     Align(
                       alignment: AlignmentGeometry.centerLeft,
                       child: Text(
@@ -117,6 +122,7 @@ class ScannedQrSheet {
                         ),
                       ),
                     ),
+
                     Container(
                       padding: EdgeInsets.all(AppSpacing.md),
                       width: double.infinity,
@@ -145,7 +151,9 @@ class ScannedQrSheet {
                         ],
                       ),
                     ),
+
                     const SizedBox(height: AppSpacing.xm),
+                    
                     Row(
                       spacing: AppSpacing.xm,
                       children: [

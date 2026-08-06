@@ -199,8 +199,8 @@ class _ScannerState extends State<Scanner> {
   }
 
   // ── 🚫 Mark absent — with a section dropdown + biometric confirmation ──
+  // MAKING ALL STUDENT AS ABSENT IF NOT ATTEND TO THE CLASS {#77f,167}
   Future<void> _markAbsentees() async {
-    // 1. Get the student list first so we know the available sections
     List<QueryDocumentSnapshot<Map<String, dynamic>>> allStudents;
     try {
       final snap = await FirebaseFirestore.instance
@@ -216,6 +216,8 @@ class _ScannerState extends State<Scanner> {
       return;
     }
 
+    if (!mounted) return;
+
     const allStudentsOption = 'All Students (All Programs/Sections)';
 
     final sections = <String>{};
@@ -230,12 +232,14 @@ class _ScannerState extends State<Scanner> {
 
     String? selectedSection;
 
+    // LAST AUTHENTICATION FOR MARKING AS ABSENT {#9b2,43}
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
+              backgroundColor: Colorpalatte.maincolor,
               title: const Text('Mark as Absent'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -374,10 +378,12 @@ class _ScannerState extends State<Scanner> {
     return '$program $yearDigits-$section'.trim();
   }
 
+  // SHOWDIALOG IF STUDENT IS ALREADY SCANNED {#14b,16}
   Future<void> _showInfoDialog(String title, String message) {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colorpalatte.maincolor,
         title: Text(title, style: const TextStyle(fontFamily: 'K2D')),
         content: Text(message),
         actions: [
@@ -394,21 +400,23 @@ class _ScannerState extends State<Scanner> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       child: Column(
         spacing: AppSpacing.sm,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── 📝 HEADER ───────────────────────────
           Text(
-            'Scan for Attendance',
+            'Attendance Scanner',
             style: TextStyle(
               fontFamily: 'K2D',
-              fontSize: AppFontSize.title,
+              fontSize: AppFontSize.display,
               fontWeight: FontWeight.w700,
             ),
           ),
 
           // ── 📷 Scanner viewfinder ───────────────────────────
+          // SCANNER AREA {#03b,47}
           Center(
             child: Container(
               width: MediaQuery.widthOf(context) * 0.85,
@@ -482,6 +490,7 @@ class _ScannerState extends State<Scanner> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // PHONE FLASH {#ef9,34}
                     ValueListenableBuilder(
                       valueListenable: controller,
                       builder: (context, state, child) {
@@ -516,7 +525,10 @@ class _ScannerState extends State<Scanner> {
                         );
                       },
                     ),
+
+                    // LATE SWITCH BUTTON {#2e8,23}
                     Row(
+                      spacing: AppSpacing.xs,
                       children: [
                         Text(
                           'Late Mode',
@@ -540,9 +552,11 @@ class _ScannerState extends State<Scanner> {
                     ),
                   ],
                 ),
+
                 const Divider(height: AppSpacing.lg),
 
-                // ── ⌨️ Manual Student ID entry (alternative to QR) ────────
+                // ── ⌨️ Manual Student ID entry ────────
+                // MANUAL ENTRY OF STUDENT ID {#f0b,18}
                 TextField(
                   controller: _manualIdController,
                   focusNode: _manualIdFocusNode,
@@ -561,9 +575,11 @@ class _ScannerState extends State<Scanner> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: AppSpacing.sm),
 
                 // ── 🚫 Mark as Absent ───────────────────────────
+                // BUTTON FOR MARKING ABSENT ALL STUDENT {#d08,33}
                 ElevatedButton.icon(
                   onPressed: _isMarkingAbsent ? null : _markAbsentees,
                   icon: _isMarkingAbsent

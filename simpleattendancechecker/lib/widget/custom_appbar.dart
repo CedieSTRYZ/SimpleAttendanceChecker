@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:simpleattendancechecker/constants/app_sizing.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
+import 'package:simpleattendancechecker/constants/shadow_card.dart';
 import 'package:simpleattendancechecker/services/biometric_service.dart';
 import 'package:simpleattendancechecker/services/csv_service.dart';
 
@@ -206,15 +207,10 @@ class _CustomAppbarState extends State<CustomAppbar> {
               decoration: BoxDecoration(
                 color: Colorpalatte.containercolor,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color.fromRGBO(0, 0, 0, 0.12),
-                    blurRadius: 2,
-                    offset: Offset(0, 1),
-                  ),
-                ],
+                boxShadow: ShadowCard.card
               ),
               child: PopupMenuButton<String>(
+                color: Colorpalatte.maincolor,
                 padding: EdgeInsets.zero,
                 icon: const Icon(Icons.settings_rounded),
                 onSelected: (value) {

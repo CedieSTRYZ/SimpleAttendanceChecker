@@ -209,14 +209,13 @@ class _DashboardState extends State<Dashboard> {
         return CustomScrollView(
           slivers: [
             // ── 📌 Sticky header ───────────────────────────
-            // Sliver Function {#bb4,79}
             SliverPersistentHeader(
               pinned: true,
               delegate: _PinnedHeaderDelegate(
                 height: _headerHeight,
                 child: Padding(
                   key: _headerContentKey,
-                  padding: EdgeInsets.all(AppSpacing.md),
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
 
                   child: Column(
                     spacing: AppSpacing.sm,

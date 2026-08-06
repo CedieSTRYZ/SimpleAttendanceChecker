@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:simpleattendancechecker/constants/app_sizing.dart';
 import 'package:simpleattendancechecker/constants/color_palatte.dart';
+import 'package:simpleattendancechecker/constants/shadow_card.dart';
 import 'package:simpleattendancechecker/screen/recordlist/pages/section_student_list.dart';
+import 'package:simpleattendancechecker/widget/date_time_card.dart';
 
 enum _RecordView { masterlist, studentList }
 
@@ -26,7 +27,8 @@ class _SectionGroup {
 }
 
 class RecordList extends StatefulWidget {
-  const RecordList({super.key});
+  final bool isActive;
+  const RecordList({super.key, required this.isActive});
 
   @override
   State<RecordList> createState() => _RecordListState();
@@ -34,11 +36,9 @@ class RecordList extends StatefulWidget {
 
 class _RecordListState extends State<RecordList> {
   _RecordView _view = _RecordView.masterlist;
-
   String? _selectedProgram;
   String? _selectedYear;
   String? _selectedSection;
-
   _SectionGroup? _activeGroup;
 
   String _yearDigits(String year) =>
@@ -56,6 +56,14 @@ class _RecordListState extends State<RecordList> {
       _view = _RecordView.masterlist;
       _activeGroup = null;
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant RecordList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isActive && !widget.isActive) {
+      _backToMasterlist();
+    }
   }
 
   Future<void> _showFilterPicker(
@@ -214,64 +222,26 @@ class _RecordListState extends State<RecordList> {
 
           case _RecordView.masterlist:
             return Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: Column(
+                spacing: AppSpacing.xm,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── 📝 HEADER ───────────────────────────
                   Text(
                     'Masterlist',
                     style: TextStyle(
                       fontFamily: 'K2D',
-                      fontSize: AppFontSize.title,
+                      fontSize: AppFontSize.display,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xm,
-                    ),
-                    width: double.infinity,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colorpalatte.secondary,
-                      borderRadius: BorderRadius.circular(AppRadius.xm),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today_rounded,
-                              size: 16,
-                              color: Colorpalatte.maincolor,
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              DateFormat(
-                                'MMMM dd, yyyy',
-                              ).format(DateTime.now()),
-                              style: TextStyle(
-                                color: Colorpalatte.maincolor,
-                                fontFamily: 'K2D',
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          'Time: ${DateFormat('hh:mm a').format(DateTime.now())}',
-                          style: TextStyle(
-                            color: Colorpalatte.maincolor,
-                            fontFamily: 'K2D',
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
+
+                  // ── 🗓️ CALENDAR ───────────────────────────
+                  DateTimeCard(selectedDate: DateTime.now(), tappable: false),
+
+                  // ── 🔽 FILTERING FUNTIONS ───────────────────────────
+                  // ALL PROGRAM, SECTION, & YEAR FILTER {#d59,54}
                   SizedBox(
                     height: 40,
                     child: ListView(
@@ -326,7 +296,9 @@ class _RecordListState extends State<RecordList> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
+
+                  // ── 🧩 ALL SECTION LIST ───────────────────────────
+                  // SECTION LISTS {#b34,80}
                   Expanded(
                     child:
                         snapshot.connectionState == ConnectionState.waiting &&
@@ -342,7 +314,7 @@ class _RecordListState extends State<RecordList> {
                         : ListView.separated(
                             itemCount: groups.length,
                             separatorBuilder: (_, _) =>
-                                const SizedBox(height: AppSpacing.xs),
+                                const SizedBox(height: AppSpacing.xm),
                             itemBuilder: (context, index) {
                               final g = groups[index];
                               return InkWell(
@@ -353,12 +325,14 @@ class _RecordListState extends State<RecordList> {
                                 child: Container(
                                   padding: const EdgeInsets.all(AppSpacing.md),
                                   decoration: BoxDecoration(
+                                    boxShadow: ShadowCard.card,
                                     color: Colorpalatte.containercolor,
                                     borderRadius: BorderRadius.circular(
                                       AppRadius.md,
                                     ),
                                   ),
                                   child: Row(
+                                    spacing: AppSpacing.sm,
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.symmetric(
@@ -380,7 +354,7 @@ class _RecordListState extends State<RecordList> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: AppSpacing.sm),
+
                                       Expanded(
                                         child: Text(
                                           g.program,
@@ -413,6 +387,7 @@ class _RecordListState extends State<RecordList> {
     );
   }
 
+  // FILTER FOR ALL PROGRAMS, YEAR, AND SECTION {#a1f,24}
   Widget _filterChip({
     required String label,
     required bool selected,
@@ -438,6 +413,7 @@ class _RecordListState extends State<RecordList> {
     );
   }
 
+  // DROPDOWN FILTER HELPER {#a43,31}
   Widget _dropdownChip({
     required String label,
     required bool active,
@@ -456,7 +432,7 @@ class _RecordListState extends State<RecordList> {
         ),
         onPressed: onTap,
         backgroundColor: active
-            ? Colorpalatte.secondary.withOpacity(0.15)
+            ? Colorpalatte.secondary.withValues(alpha: .15)
             : Colorpalatte.containercolor,
         labelStyle: TextStyle(
           color: active ? Colorpalatte.secondary : Colorpalatte.mutedcolor,

@@ -97,14 +97,14 @@ class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
     // ── 🛠️ Local functions ───────────────────────────
-    final dateStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);   
+    final dateStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance
           .collection('attendance')
           .where('date', isEqualTo: dateStr)
           .orderBy('timestamp', descending: true)
-          .snapshots(), 
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Padding(

@@ -40,7 +40,8 @@ class CircularStatRing extends StatelessWidget {
           ),
           Text(
             '${clamped.round()}%',
-            style: textStyle ??
+            style:
+                textStyle ??
                 TextStyle(
                   fontFamily: 'K2D',
                   fontWeight: FontWeight.w700,

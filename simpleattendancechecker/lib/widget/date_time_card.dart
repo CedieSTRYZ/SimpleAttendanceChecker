@@ -55,7 +55,9 @@ class _DateTimeCardState extends State<DateTimeCard> {
     // ── 🛠️ Local functions ───────────────────────────
     final dateStr = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
     final isToday = dateStr == DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final formattedDate = DateFormat('MMMM dd, yyyy').format(widget.selectedDate);
+    final formattedDate = DateFormat(
+      'MMMM dd, yyyy',
+    ).format(widget.selectedDate);
     final formattedTime = DateFormat('hh:mm a').format(_now);
 
     // ── 🎨 UI Structures ───────────────────────────
@@ -77,7 +79,6 @@ class _DateTimeCardState extends State<DateTimeCard> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  
                   Text(
                     formattedDate,
                     style: TextStyle(

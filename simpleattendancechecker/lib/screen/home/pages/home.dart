@@ -61,7 +61,11 @@ class _HomeState extends State<Home> {
         animationDuration: const Duration(milliseconds: 400),
         onTap: (index) => setState(() => _selectedIndex = index),
         items: [
-          Icon(Icons.qr_code_scanner_rounded, color: Colorpalatte.maincolor, size: 30),
+          Icon(
+            Icons.qr_code_scanner_rounded,
+            color: Colorpalatte.maincolor,
+            size: 30,
+          ),
           Icon(Icons.home_rounded, color: Colorpalatte.maincolor, size: 30),
           Icon(Icons.list_alt_rounded, color: Colorpalatte.maincolor, size: 30),
         ],

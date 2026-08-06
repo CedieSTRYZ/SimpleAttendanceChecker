@@ -42,7 +42,6 @@ class StatsChipsCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           spacing: AppSpacing.sm,
           children: [
-
             Flexible(
               child: Text(
                 count,

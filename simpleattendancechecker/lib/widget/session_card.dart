@@ -16,7 +16,6 @@ class SessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      
       onDoubleTap: onDoubleTap,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),

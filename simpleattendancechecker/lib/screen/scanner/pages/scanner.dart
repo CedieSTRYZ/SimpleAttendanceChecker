@@ -158,19 +158,6 @@ class _ScannerState extends State<Scanner> {
               '${now.hour}:${now.minute.toString().padLeft(2, '0')}',
         },
         onConfirm: () async {
-          // ── 🔐 Biometric confirmation is required before saving "Late" ──
-          if (status == 'Late') {
-            final verified = await BiometricService.authenticate();
-            if (!mounted) return;
-            if (!verified) {
-              await _showInfoDialog(
-                'Not Confirmed',
-                'The "Late" mark was cancelled because biometric verification failed.',
-              );
-              return;
-            }
-          }
-
           final docId =
               '${studentId}_${DateFormat('yyyyMMdd_HHmmss').format(now)}';
           await FirebaseFirestore.instance
@@ -186,6 +173,7 @@ class _ScannerState extends State<Scanner> {
                 'date': todayStr,
                 'time': DateFormat('HH:mm').format(now),
                 'timestamp': Timestamp.fromDate(now),
+                'selfScanned': true,
               });
         },
       );
@@ -351,6 +339,7 @@ class _ScannerState extends State<Scanner> {
           'date': todayStr,
           'time': DateFormat('HH:mm').format(now),
           'timestamp': Timestamp.fromDate(now),
+          'selfScanned': false,
         });
         markedCount++;
       }

@@ -34,27 +34,53 @@ class StudentAnalyticsSheet {
                   .snapshots(),
               builder: (context, snapshot) {
                 final docs = snapshot.data?.docs ?? [];
+
+                // ── 📊 Present/Late/Absent — para sa regular Students ──────
                 final present = docs
                     .where((d) => d.data()['attendanceStatus'] == 'Present')
                     .length;
-                final late =
-                    docs.where((d) => d.data()['attendanceStatus'] == 'Late').length;
+                final late = docs
+                    .where((d) => d.data()['attendanceStatus'] == 'Late')
+                    .length;
                 final absent = docs
                     .where((d) => d.data()['attendanceStatus'] == 'Absent')
                     .length;
                 final total = present + late + absent;
 
-                final overallPercent =
-                    total == 0 ? 0.0 : ((present + late) / total) * 100;
-                final presentPercent = total == 0 ? 0.0 : (present / total) * 100;
+                // Counted parin yung late as present which is akala
+                final attendedCount = present + late;
+                final overallPercent = total == 0
+                    ? 0.0
+                    : (attendedCount / total) * 100;
+                final presentPercent = overallPercent;
                 final latePercent = total == 0 ? 0.0 : (late / total) * 100;
                 final absentPercent = total == 0 ? 0.0 : (absent / total) * 100;
 
                 final overallLabel = overallPercent >= 75
                     ? "Keep going! You're doing GREAT."
                     : overallPercent >= 50
-                        ? "Doing okay — try to attend more classes."
-                        : "Attendance needs improvement.";
+                    ? "Doing okay — try to attend more classes."
+                    : "Attendance needs improvement.";
+
+                // ── 📊 In-School vs OJT/Work breakdown — para sa OJT/WS ────
+                // "selfScanned: true"  = mismong nag-scan sa school (In-School)
+                // "selfScanned: false" = na-log via Mark as Absent (OJT/Work,
+                // hindi ito "kabiguan" — normal lang na araw ng OJT/duty)
+                final ojtWsDocs = docs.where((d) {
+                  final status = d.data()['attendanceStatus'];
+                  return status == 'OJT' || status == 'Working Student';
+                }).toList();
+                final ojtWsTotal = ojtWsDocs.length;
+                final inSchoolCount = ojtWsDocs
+                    .where((d) => d.data()['selfScanned'] == true)
+                    .length;
+                final ojtCount = ojtWsTotal - inSchoolCount;
+                final inSchoolPercent = ojtWsTotal == 0
+                    ? 0.0
+                    : (inSchoolCount / ojtWsTotal) * 100;
+                final ojtPercent = ojtWsTotal == 0
+                    ? 0.0
+                    : (ojtCount / ojtWsTotal) * 100;
 
                 return ListView(
                   controller: scrollController,
@@ -62,7 +88,10 @@ class StudentAnalyticsSheet {
                   children: [
                     TextButton.icon(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 16,
+                      ),
                       label: const Text('Back'),
                       style: TextButton.styleFrom(
                         foregroundColor: Colorpalatte.secondary,
@@ -104,7 +133,7 @@ class StudentAnalyticsSheet {
                         ),
                       )
                     else ...[
-                      // ── 📊 Analytics — base sa Present/Late/Absent lang ────
+                      // ── 📊 Present/Late/Absent analytics ─────────────
                       if (total > 0) ...[
                         Container(
                           width: double.infinity,
@@ -141,7 +170,8 @@ class StudentAnalyticsSheet {
                                       overallLabel,
                                       style: TextStyle(
                                         fontSize: AppFontSize.caption,
-                                        color: Colorpalatte.maincolor.withOpacity(0.8),
+                                        color: Colorpalatte.maincolor
+                                            .withOpacity(0.8),
                                       ),
                                     ),
                                   ],
@@ -165,7 +195,7 @@ class StudentAnalyticsSheet {
                         const SizedBox(height: AppSpacing.sm),
                         _statRow(
                           'Present',
-                          'Attended $present time(s) of all recorded classes.',
+                          'Attended $attendedCount time(s) of all recorded classes (includes late arrivals).',
                           presentPercent,
                           Colorpalatte.sucesscolor,
                         ),
@@ -186,8 +216,34 @@ class StudentAnalyticsSheet {
                         const SizedBox(height: AppSpacing.lg),
                       ],
 
-                      // ── 📋 Attendance log — LAHAT ng status (Present,
-                      // Late, Absent, OJT, Working Student) ────────────
+                      // ── 📊 In-School vs OJT/Work breakdown ───────────
+                      if (ojtWsTotal > 0) ...[
+                        Text(
+                          'Attendance Breakdown',
+                          style: TextStyle(
+                            fontFamily: 'K2D',
+                            fontSize: AppFontSize.title,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _statRow(
+                          'In-School',
+                          'Scanned in at school $inSchoolCount time(s) of $ojtWsTotal logged day(s).',
+                          inSchoolPercent,
+                          Colorpalatte.accentcolor,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        _statRow(
+                          'OJT / Work',
+                          'Logged as OJT/Working (no school scan) $ojtCount time(s) of $ojtWsTotal logged day(s).',
+                          ojtPercent,
+                          Colorpalatte.ojtcolor,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
+
+                      // ── 📋 Attendance log — LAHAT ng status ──────────
                       Text(
                         'Attendance Log',
                         style: TextStyle(
@@ -202,8 +258,9 @@ class StudentAnalyticsSheet {
                         final rawDate = (d['date'] ?? '').toString();
                         var displayDate = rawDate;
                         try {
-                          displayDate = DateFormat('MMM dd, yyyy')
-                              .format(DateTime.parse(rawDate));
+                          displayDate = DateFormat(
+                            'MMM dd, yyyy',
+                          ).format(DateTime.parse(rawDate));
                         } catch (_) {
                           // panatilihin ang raw string kung hindi ma-parse
                         }
@@ -265,7 +322,12 @@ class StudentAnalyticsSheet {
               ],
             ),
           ),
-          CircularStatRing(percent: percent, color: color, size: 48, strokeWidth: 5),
+          CircularStatRing(
+            percent: percent,
+            color: color,
+            size: 48,
+            strokeWidth: 5,
+          ),
         ],
       ),
     );
